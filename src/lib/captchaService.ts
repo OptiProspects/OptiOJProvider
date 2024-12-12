@@ -1,12 +1,8 @@
-import axios from 'axios';
+import apiClient from '@/config/apiConfig';
 
 export const verifyCaptcha = async (result: any) => {
   try {
-    const response = await axios.post('http://localhost:8080/verification/validateCaptcha', result, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await apiClient.post('/verification/validateCaptcha', result);
     return response.data;
   } catch (error) {
     console.error('Error verifying captcha:', error);
@@ -16,14 +12,10 @@ export const verifyCaptcha = async (result: any) => {
 
 export const sendVerificationCode = async (requestValue: string, requestType: 'email' | 'phone', captchaID: string) => {
   try {
-    const response = await axios.post('http://localhost:8080/verification/sendVerificationCode', {
+    const response = await apiClient.post('/verification/sendVerificationCode', {
       requestValue,
       requestType,
       captchaID,
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
     });
     return response.data;
   } catch (error) {

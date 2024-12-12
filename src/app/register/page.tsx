@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tabs";
 import Captcha from "@/components/Captcha";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const captchaRef = React.useRef(null);
@@ -29,7 +30,6 @@ export default function RegisterPage() {
 
   const handleCaptchaSuccess = (data: any) => {
     console.log('Captcha verified successfully:', data);
-    // 这里可以处理后续逻辑
   };
 
   return (
@@ -59,10 +59,7 @@ export default function RegisterPage() {
                     placeholder="请输入您的邮箱" 
                     className="flex-1" 
                     value={email} 
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      console.log('Updated email:', e.target.value); // 添加日志
-                    }}  
+                    onChange={(e) => setEmail(e.target.value)}  
                   />
                   <div className="flex-shrink-0">
                     <Captcha 

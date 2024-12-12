@@ -2,6 +2,7 @@ import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import GeeTest, { GeeTestRef } from 'react-geetest-v4';
 import { verifyCaptcha, sendVerificationCode } from "@/lib/captchaService";
 import { Button } from "@/components/ui/button"
+import { toast } from 'sonner';
 
 const Captcha = forwardRef<GeeTestRef | null, { onSuccess: (result: any) => void; requestValue: string; requestType: 'email' | 'phone' }>(({ onSuccess, requestValue, requestType }, ref) => {
   console.log('Received requestValue in Captcha:', requestValue);
@@ -25,6 +26,8 @@ const Captcha = forwardRef<GeeTestRef | null, { onSuccess: (result: any) => void
       await handleSendCode(data.requestID, requestValueRef.current);
     } catch (error) {
       console.error('Error during captcha verification:', error);
+      const errorMessage = (error as any)?.response?.data?.error || '验证码验证失败，请重试';
+      toast.error(errorMessage);
     }
   };
 
@@ -41,6 +44,8 @@ const Captcha = forwardRef<GeeTestRef | null, { onSuccess: (result: any) => void
       console.log('Verification code sent successfully:', data);
     } catch (error) {
       console.error('Error sending verification code:', error);
+      const errorMessage = (error as any)?.response?.data?.error || '验证码发送失败，遇到了预期外的错误';
+      toast.error(errorMessage);
     }
   };
 

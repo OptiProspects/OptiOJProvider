@@ -16,6 +16,7 @@ export const sendVerificationCode = async (requestValue: string, requestType: 'e
       requestValue,
       requestType,
       captchaID,
+      userExist: false
     });
     return response.data;
   } catch (error) {

@@ -19,22 +19,58 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import Captcha from "@/components/Captcha";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { sendVerificationCode } from "@/lib/captchaService";
 
 export default function RegisterPage() {
   const captchaRef = React.useRef(null);
   const [activeTab, setActiveTab] = React.useState('email');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const requestValueRef = useRef<string | null>(null);
 
-  const handleCaptchaSuccess = (data: any) => {
+  useEffect(() => {
+    requestValueRef.current = activeTab === 'email' ? email : phone;
+  }, [email, phone, activeTab]);
+
+  const handleCaptchaSuccess = async (data: any) => {
     console.log('Captcha verified successfully:', data);
+    const requestValue = requestValueRef.current;
+    const requestType = activeTab;
+
+    console.log('Request Value:', requestValue);
+    console.log('Request Type:', requestType);
+
+    if (requestValue && data.requestID) {
+      await handleSendCode(data.requestID, requestValue, requestType as 'email' | 'phone');
+    } else {
+      console.error('Request value or requestID is not available. Please verify the captcha first.');
+    }
+  };
+
+  const handleSendCode = async (id: string, value: string, requestType: 'email' | 'phone') => {
+    console.log('Sending code to:', value);
+
+    if (!id) {
+      console.error('Request ID is not available. Please verify the captcha first.');
+      return;
+    }
+
+    try {
+      const data = await sendVerificationCode(value, requestType, id);
+      console.log('Verification code sent successfully:', data);
+      toast.success('验证码发送成功');
+    } catch (error) {
+      console.error('Error sending verification code:', error);
+      const errorMessage = (error as any)?.response?.data?.error || '验证码发送失败，遇到了预期外的错误';
+      toast.error(errorMessage);
+    }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <Tabs defaultValue="email" className="w-[400px]">
+      <Tabs defaultValue="email" className="w-[400px]" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="email">邮箱注册</TabsTrigger>
           <TabsTrigger value="phone">手机号注册</TabsTrigger>

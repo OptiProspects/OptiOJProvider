@@ -141,7 +141,7 @@ export default function RegisterPage() {
       };
 
       const response = await register(registrationData);
-      toast.success('注册成功！');
+      toast.success('注册成功，欢迎来到 OptiOJ ！ ヾ(≧▽≦*)o');
     } catch (error) {
       console.error('Registration error:', error);
       const errorMessage = (error as any)?.response?.data?.error || '注册失败，请重试';

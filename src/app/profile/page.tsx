@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -18,6 +18,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserIcon, BellIcon, ShieldIcon, KeyIcon } from "lucide-react"
+import { AvatarCropper } from '@/components/AvatarCropper'
+import { uploadAvatar } from '@/lib/profileService'
+import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { PencilIcon, UploadIcon, TrashIcon } from "lucide-react"
+import { getAvatar } from '@/lib/profileService'
 
 const sidebarNavItems = [
   {
@@ -53,6 +64,9 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 export default function ProfilePage() {
   const [avatar, setAvatar] = useState("/placeholder-avatar.jpg")
+  const [cropperOpen, setCropperOpen] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -69,6 +83,57 @@ export default function ProfilePage() {
     // 这里处理表单提交逻辑
   }
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string)
+        setCropperOpen(true)
+      }
+      reader.readAsDataURL(file)
+    }
+    event.target.value = ''
+  }
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    try {
+      const response = await uploadAvatar(croppedBlob as File)
+      setAvatar(response.avatarUrl)
+      toast.success('头像上传成功')
+    } catch (error) {
+      toast.error('头像上传失败')
+    }
+  }
+
+  const handleDeleteAvatar = () => {
+    setAvatar("/placeholder-avatar.jpg")
+    // TODO: 调用删除头像的 API
+  }
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      try {
+        const response = await getAvatar();
+        if (response.avatarUrl) {
+          setAvatar(response.avatarUrl);
+        }
+      } catch (error) {
+        console.error('获取头像失败:', error);
+        setAvatar("/placeholder-avatar.jpg");
+      }
+    };
+
+    fetchAvatar();
+
+    // 清理函数
+    return () => {
+      if (avatar.startsWith('blob:')) {
+        URL.revokeObjectURL(avatar);
+      }
+    };
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -76,10 +141,40 @@ export default function ProfilePage() {
       </CardHeader>
       <CardContent>
         <div className="mb-8">
-          <Avatar className="w-24 h-24">
-            <AvatarImage src={avatar} alt="头像" />
-            <AvatarFallback>头像</AvatarFallback>
-          </Avatar>
+          <div className="relative w-24 mx-auto">
+            <Avatar className="w-24 h-24">
+              <AvatarImage src={avatar} alt="头像" />
+              <AvatarFallback>头像</AvatarFallback>
+            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full shadow-md"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  上传头像
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDeleteAvatar}>
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  删除头像
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileSelect}
+            />
+          </div>
         </div>
 
         <Form {...form}>
@@ -162,6 +257,13 @@ export default function ProfilePage() {
             <Button type="submit">保存更改</Button>
           </form>
         </Form>
+
+        <AvatarCropper
+          open={cropperOpen}
+          onClose={() => setCropperOpen(false)}
+          imageUrl={selectedImage || ''}
+          onCropComplete={handleCropComplete}
+        />
       </CardContent>
     </Card>
   )

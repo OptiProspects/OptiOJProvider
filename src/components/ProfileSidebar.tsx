@@ -29,7 +29,7 @@ const sidebarNavItems = [
   },
 ]
 
-export function ProfileSidebar() {
+export function ProfileSidebar({ userData }) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -45,7 +45,9 @@ export function ProfileSidebar() {
                 "w-full justify-start gap-2",
                 pathname === item.href && "bg-muted"
               )}
-              onClick={() => router.push(item.href)}
+              onClick={() => {
+                router.push(item.href)
+              }}
             >
               <item.icon className="h-4 w-4" />
               {item.title}

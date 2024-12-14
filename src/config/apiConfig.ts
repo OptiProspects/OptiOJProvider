@@ -47,18 +47,27 @@ apiClient.interceptors.response.use(
           }
         );
 
-        const { access_token } = response.data;
+        const { access_token, refresh_token } = response.data;
+        
+        // 保存新的 token
         localStorage.setItem('access_token', access_token);
+        if (refresh_token) {
+          localStorage.setItem('refresh_token', refresh_token);
+        }
         
         // 重试原始请求
         originalRequest.headers['Authorization'] = access_token;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // 刷新失败，清除所有认证信息
+        // 刷新失败，清除所有认证信息并跳转到登录页
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        
+        // 如果不在登录页面，才跳转
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }

@@ -21,6 +21,9 @@ apiClient.interceptors.request.use(
   }
 );
 
+// 不需要登录的白名单路由
+const publicRoutes = ['/', '/login', '/register', '/about'];
+
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response) => response,
@@ -59,13 +62,14 @@ apiClient.interceptors.response.use(
         originalRequest.headers['Authorization'] = access_token;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // 刷新失败，清除所有认证信息并跳转到登录页
+        // 刷新失败，清除所有认证信息
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         
-        // 如果不在登录页面，才跳转
-        if (!window.location.pathname.includes('/login')) {
+        // 只在非白名单路由时跳转到登录页
+        const currentPath = window.location.pathname;
+        if (!publicRoutes.includes(currentPath)) {
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);

@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import ProblemList from "@/components/ProblemList";
 
@@ -14,7 +14,7 @@ export default function Home() {
             <ProblemList />
           </div>
           <Card className="flex-none h-full">
-            <ShadcnCalendar />
+            <Calendar />
           </Card>
         </div>
       </main>

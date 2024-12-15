@@ -47,7 +47,7 @@ const data = {
         },
         {
           title: "生成用户",
-          url: "#",
+          url: "/panel/users/generate",
         },
       ],
     },

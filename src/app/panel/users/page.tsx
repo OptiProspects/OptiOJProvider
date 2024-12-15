@@ -59,6 +59,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { BanTimePicker } from "@/components/ui/ban-time-picker"
+import { FormLayout } from "@/components/ui/form-layout"
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -407,152 +408,15 @@ export default function UsersPage() {
   const totalPages = Math.ceil(total / pageSize)
 
   return (
-    <div className="h-full p-6">
-      <div className="h-full flex flex-col space-y-4 bg-white rounded-lg shadow-sm">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-2xl font-bold">用户管理</h1>
-        </div>
-
-        <div className="flex items-center justify-between px-4">
-          <Input
-            placeholder="搜索用户名..."
-            value={(table.getColumn("username")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("username")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                显示列 <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="flex-1 px-4">
-          <div className="h-full rounded-md border">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id} className="h-12 px-4 text-center">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      )
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={columns(fetchData).length} className="h-24 text-center">
-                      <div className="flex justify-center items-center">
-                        <Spinner className="text-muted-foreground" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="h-12 px-4 text-center">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : !loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns(fetchData).length}
-                      className="h-24 text-center"
-                    >
-                      暂无数据
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between p-4 border-t">
-          <div className="text-sm text-muted-foreground whitespace-nowrap">
-            共 {total} 条记录
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (page > 1) setPage(page - 1)
-                  }}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    href="#"
-                    isActive={page === p}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      setPage(p)
-                    }}
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (page < totalPages) setPage(page + 1)
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </div>
-    </div>
+    <FormLayout
+      title="基础用户管理"
+      searchColumn="username"
+      searchPlaceholder="搜索用户名..."
+      table={table}
+      columns={columns(fetchData)}
+      loading={loading}
+    >
+      {/* 这里可以添加其他操作按钮 */}
+    </FormLayout>
   )
 } 

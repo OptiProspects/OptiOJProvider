@@ -73,4 +73,63 @@ export const unbanUser = async (userId: number) => {
     console.error('解封用户失败:', error);
     throw error;
   }
+};
+
+// 定义管理员列表响应接口
+interface AdminListResponse {
+  code: number;
+  data: {
+    admins: Admin[];
+    total: number;
+  };
+  message: string;
+}
+
+interface Admin {
+  id: number;
+  user_id: number;
+  username: string;
+  email: string;
+  role: string;
+  created_at: string;
+  last_login_time: string;
+  last_login_ip: string;
+}
+
+// 获取管理员列表
+export const getAdminList = async () => {
+  try {
+    const response = await apiClient.get<AdminListResponse>('/admin/listAdmin');
+    return response.data.data.admins; // 返回 data.data.admins
+  } catch (error) {
+    console.error('获取管理员列表失败:', error);
+    throw error;
+  }
+};
+
+// 添加管理员
+export const addAdmin = async (userId: number, role: string) => {
+  try {
+    const response = await apiClient.post('/admin/addAdmin', {
+      user_id: userId,
+      role
+    });
+    return response.data;
+  } catch (error) {
+    console.error('添加管理员失败:', error);
+    throw error;
+  }
+};
+
+// 移除管理员
+export const removeAdmin = async (userId: number) => {
+  try {
+    const response = await apiClient.delete('/admin/removeAdmin', {
+      data: { user_id: userId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('移除管理员失败:', error);
+    throw error;
+  }
 }; 

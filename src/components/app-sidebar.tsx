@@ -35,11 +35,11 @@ const data = {
       items: [
         {
           title: "基础用户管理",
-          url: "#",
+          url: "/panel/users",
         },
         {
           title: "管理员管理",
-          url: "#",
+          url: "/panel/users/admin",
         },
         {
           title: "导入用户",

@@ -372,7 +372,8 @@ export default function UsersPage() {
         pageSize,
         searchUsername || undefined
       )
-      setData(response.users)
+      const sortedUsers = response.users.sort((a, b) => b.id - a.id);
+      setData(sortedUsers)
       setTotal(response.total)
     } catch (error) {
       toast("加载失败", {

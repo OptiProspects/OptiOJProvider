@@ -216,6 +216,7 @@ export function FormLayout({
                     if (page > 1) onPageChange?.(page - 1);
                   }}
                   isActive={page > 1}
+                  className="cursor-pointer"
                 />
               </PaginationItem>
               
@@ -229,6 +230,7 @@ export function FormLayout({
                     <PaginationLink
                       isActive={page === pageNum}
                       onClick={() => onPageChange?.(pageNum)}
+                      className="cursor-pointer"
                     >
                       {pageNum}
                     </PaginationLink>
@@ -242,6 +244,7 @@ export function FormLayout({
                     if (page < totalPages) onPageChange?.(page + 1);
                   }}
                   isActive={page < totalPages}
+                  className="cursor-pointer"
                 />
               </PaginationItem>
             </PaginationContent>

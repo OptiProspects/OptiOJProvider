@@ -187,7 +187,7 @@ const columns: ColumnDef<Admin>[] = [
 export default function AdminPage() {
   const [data, setData] = React.useState<Admin[]>([])
   const [loading, setLoading] = React.useState(false)
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([{ id: 'id', desc: false }])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
@@ -202,7 +202,8 @@ export default function AdminPage() {
     setLoading(true)
     try {
       const admins = await getAdminList()
-      setData(admins)
+      const sortedAdmins = admins.sort((a, b) => a.id - b.id);
+      setData(sortedAdmins)
     } catch (error: any) {
       toast.error("获取管理员列表失败", {
         description: error.response?.data?.error || "未知错误"

@@ -362,11 +362,16 @@ export default function UsersPage() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [searchUsername, setSearchUsername] = React.useState("")
 
   const fetchData = React.useCallback(async () => {
     setLoading(true)
     try {
-      const response = await getUserList(page, pageSize)
+      const response = await getUserList(
+        page, 
+        pageSize,
+        searchUsername || undefined
+      )
       setData(response.users)
       setTotal(response.total)
     } catch (error) {
@@ -380,7 +385,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize])
+  }, [page, pageSize, searchUsername])
 
   React.useEffect(() => {
     fetchData()
@@ -407,6 +412,11 @@ export default function UsersPage() {
 
   const totalPages = Math.ceil(total / pageSize)
 
+  const handleSearch = (value: string) => {
+    setSearchUsername(value)
+    setPage(1)
+  }
+
   return (
     <FormLayout
       title="基础用户管理"
@@ -415,6 +425,14 @@ export default function UsersPage() {
       table={table}
       columns={columns(fetchData)}
       loading={loading}
+      page={page}
+      pageSize={pageSize}
+      total={total}
+      onPageChange={(newPage) => {
+        setPage(newPage)
+      }}
+      onSearch={handleSearch}
+      searchValue={searchUsername}
     >
       {/* 这里可以添加其他操作按钮 */}
     </FormLayout>

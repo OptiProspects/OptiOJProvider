@@ -18,6 +18,16 @@ import {
 } from "@/components/ui/table"
 import { Spinner } from "@/components/ui/spinner"
 import { flexRender } from "@tanstack/react-table"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+
 interface FormLayoutProps {
   title: string;
   searchColumn?: string;
@@ -27,6 +37,12 @@ interface FormLayoutProps {
   columns: any[];
   loading: boolean;
   children?: React.ReactNode;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  onPageChange?: (page: number) => void;
+  onSearch?: (value: string) => void;
+  searchValue?: string;
 }
 
 export function FormLayout({
@@ -37,8 +53,50 @@ export function FormLayout({
   table,
   columns,
   loading,
-  children
+  children,
+  page = 1,
+  pageSize = 10,
+  total = 0,
+  onPageChange,
+  onSearch,
+  searchValue,
 }: FormLayoutProps) {
+  const totalPages = Math.ceil(total / pageSize)
+  
+  const getPageNumbers = () => {
+    const pages: (number | null)[] = []
+    const maxVisiblePages = 5
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (page <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i)
+        }
+        pages.push(null)
+        pages.push(totalPages)
+      } else if (page >= totalPages - 2) {
+        pages.push(1)
+        pages.push(null)
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i)
+        }
+      } else {
+        pages.push(1)
+        pages.push(null)
+        for (let i = page - 1; i <= page + 1; i++) {
+          pages.push(i)
+        }
+        pages.push(null)
+        pages.push(totalPages)
+      }
+    }
+    return pages
+  }
+
   return (
     <div className="h-full p-6">
       <div className="h-full flex flex-col space-y-4 bg-white rounded-lg shadow-sm">
@@ -51,10 +109,15 @@ export function FormLayout({
           {searchColumn && (
             <Input
               placeholder={searchPlaceholder}
-              value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchColumn)?.setFilterValue(event.target.value)
-              }
+              value={searchValue ?? ""}
+              onChange={(event) => {
+                const value = event.target.value
+                if (onSearch) {
+                  onSearch(value)
+                } else {
+                  table.getColumn(searchColumn)?.setFilterValue(value)
+                }
+              }}
               className="max-w-sm"
             />
           )}
@@ -142,6 +205,47 @@ export function FormLayout({
               </TableBody>
             </Table>
           </div>
+        </div>
+
+        <div className="px-4 py-2 flex justify-end">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => {
+                    if (page > 1) onPageChange?.(page - 1);
+                  }}
+                  isActive={page > 1}
+                />
+              </PaginationItem>
+              
+              {getPageNumbers().map((pageNum, index) => (
+                pageNum === null ? (
+                  <PaginationItem key={`ellipsis-${index}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      isActive={page === pageNum}
+                      onClick={() => onPageChange?.(pageNum)}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              ))}
+
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => {
+                    if (page < totalPages) onPageChange?.(page + 1);
+                  }}
+                  isActive={page < totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>

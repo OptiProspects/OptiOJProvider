@@ -22,14 +22,20 @@ export interface UserListResponse {
 export const getUserList = async (
   page: number = 1,
   page_size: number = 10,
-  filters?: { [key: string]: any }
+  username?: string,
+  email?: string,
+  phone?: string,
+  status?: string
 ) => {
   try {
     const response = await apiClient.get<UserListResponse>('/admin/users', {
       params: {
         page,
         page_size,
-        ...filters
+        ...(username && { username }),
+        ...(email && { email }),
+        ...(phone && { phone }),
+        ...(status && { status })
       }
     });
     return response.data;

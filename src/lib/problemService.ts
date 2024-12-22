@@ -241,8 +241,25 @@ export const getTestCaseContent = async (id: number) => {
   }
 };
 
+// 添加更新题目的接口类型
+export interface UpdateProblemData {
+  title?: string;
+  description?: string;
+  input_description?: string;
+  output_description?: string;
+  samples?: string;
+  hint?: string;
+  source?: string;
+  difficulty?: "easy" | "medium" | "hard";
+  time_limit?: number;
+  memory_limit?: number;
+  is_public?: boolean;
+  category_ids?: number[];
+  tag_ids?: number[];
+}
+
 // 添加更新题目的方法
-export const updateProblem = async (id: number, data: CreateProblemData) => {
+export const updateProblem = async (id: number, data: UpdateProblemData) => {
   try {
     const response = await apiClient.put(`/problems/${id}`, data);
     return response.data;

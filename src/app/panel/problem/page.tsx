@@ -52,9 +52,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Spinner } from "@/components/ui/spinner"
-import { getProblemList, deleteProblem } from "@/lib/problemService"
-import type { Problem } from "@/lib/problemService"
+import { getProblemList, deleteProblem, getProblemDetail } from "@/lib/problemService"
+import type { Problem, ProblemDetail } from "@/lib/problemService"
 import { CreateProblemDialog } from "./create-dialog"
+import { EditProblemDialog } from "./edit-dialog"
 import { TestCaseDialog } from "./testcase-dialog"
 
 const difficultyMap = {
@@ -79,8 +80,10 @@ export default function ProblemPage() {
   const [isPublic, setIsPublic] = React.useState<string>("all")
 
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
   const [testcaseDialogOpen, setTestcaseDialogOpen] = React.useState(false)
   const [selectedProblemId, setSelectedProblemId] = React.useState<number>(0)
+  const [selectedProblem, setSelectedProblem] = React.useState<ProblemDetail | null>(null)
 
   const fetchData = React.useCallback(async () => {
     setLoading(true)
@@ -240,9 +243,16 @@ export default function ProblemPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>操作</DropdownMenuLabel>
                 <DropdownMenuItem
-                  onClick={() => {
-                    // TODO: 实现编辑功能
-                    toast.info("编辑功能开发中")
+                  onClick={async () => {
+                    try {
+                      const problemDetail = await getProblemDetail(problem.id)
+                      setSelectedProblem(problemDetail)
+                      setEditDialogOpen(true)
+                    } catch (error: any) {
+                      toast.error("获取题目详情失败", {
+                        description: error.response?.data?.message || "请稍后重试"
+                      })
+                    }
                   }}
                 >
                   编辑题目
@@ -453,6 +463,15 @@ export default function ProblemPage() {
         onOpenChange={setCreateDialogOpen}
         onSuccess={fetchData}
       />
+
+      {selectedProblem && (
+        <EditProblemDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={fetchData}
+          problem={selectedProblem}
+        />
+      )}
 
       <TestCaseDialog
         open={testcaseDialogOpen}

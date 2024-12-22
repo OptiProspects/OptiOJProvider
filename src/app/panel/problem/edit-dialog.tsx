@@ -10,9 +10,10 @@ import rehypeSanitize from "rehype-sanitize"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import rehypeHighlight from "rehype-highlight"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Plus, Minus } from "lucide-react"
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github-dark.css'
+import { Label } from "@/components/ui/label"
 
 import {
   Dialog,
@@ -93,6 +94,12 @@ const editorStyles = {
   editor: "wmde-markdown-var [--color-canvas-default:transparent] [--color-btn-bg:transparent] [--color-border-default:transparent]"
 }
 
+interface Sample {
+  input: string;
+  output: string;
+  explanation?: string;
+}
+
 export function EditProblemDialog({
   open,
   onOpenChange,
@@ -102,6 +109,8 @@ export function EditProblemDialog({
   const [tags, setTags] = React.useState<Tag[]>([])
   const [tagsOpen, setTagsOpen] = React.useState(false)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
+  const [useJsonInput, setUseJsonInput] = React.useState(false)
+  const [samples, setSamples] = React.useState<Sample[]>([])
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -163,8 +172,29 @@ export function EditProblemDialog({
     }
   }, [open])
 
+  // 初始化样例数据
+  React.useEffect(() => {
+    if (problem) {
+      try {
+        const parsedSamples = JSON.parse(problem.samples)
+        setSamples(parsedSamples)
+      } catch {
+        setSamples([{ input: "", output: "", explanation: "" }])
+      }
+    }
+  }, [problem])
+
   const onSubmit = async (data: FormData) => {
     try {
+      if (!useJsonInput) {
+        // 过滤掉空的样例
+        const validSamples = samples.filter(s => s.input.trim() || s.output.trim())
+        if (validSamples.length === 0) {
+          toast.error("请至少添加一个样例")
+          return
+        }
+        data.samples = JSON.stringify(validSamples)
+      }
       await updateProblem(problem.id, data)
       toast.success("更新成功")
       onOpenChange(false)
@@ -174,6 +204,20 @@ export function EditProblemDialog({
         description: error.response?.data?.message || "请稍后重试"
       })
     }
+  }
+
+  const addSample = () => {
+    setSamples([...samples, { input: "", output: "", explanation: "" }])
+  }
+
+  const removeSample = (index: number) => {
+    setSamples(samples.filter((_, i) => i !== index))
+  }
+
+  const updateSample = (index: number, field: keyof Sample, value: string) => {
+    const newSamples = [...samples]
+    newSamples[index] = { ...newSamples[index], [field]: value }
+    setSamples(newSamples)
   }
 
   return (
@@ -292,18 +336,85 @@ export function EditProblemDialog({
                   name="samples"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>样例数据</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>样例数据</FormLabel>
+                        <div className="flex items-center space-x-2">
+                          <Label>JSON 格式</Label>
+                          <Switch
+                            checked={useJsonInput}
+                            onCheckedChange={setUseJsonInput}
+                          />
+                        </div>
+                      </div>
                       <FormControl>
-                        <Textarea {...field} rows={4} placeholder={`[
+                        {useJsonInput ? (
+                          <Textarea {...field} rows={4} placeholder={`[
   {
     "input": "1 2",
     "output": "3",
     "explanation": "1 + 2 = 3"
   }
 ]`} />
+                        ) : (
+                          <div className="space-y-4">
+                            {samples.map((sample, index) => (
+                              <div key={index} className="space-y-4 p-4 border rounded-lg relative">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-2 top-2"
+                                  onClick={() => removeSample(index)}
+                                  disabled={samples.length === 1}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <div className="grid gap-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label>输入</Label>
+                                      <Textarea
+                                        value={sample.input}
+                                        onChange={(e) => updateSample(index, "input", e.target.value)}
+                                        placeholder="输入数据..."
+                                        rows={3}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label>输出</Label>
+                                      <Textarea
+                                        value={sample.output}
+                                        onChange={(e) => updateSample(index, "output", e.target.value)}
+                                        placeholder="输出数据..."
+                                        rows={3}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>说明（可选）</Label>
+                                    <Input
+                                      value={sample.explanation}
+                                      onChange={(e) => updateSample(index, "explanation", e.target.value)}
+                                      placeholder="解释说明..."
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={addSample}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              添加样例
+                            </Button>
+                          </div>
+                        )}
                       </FormControl>
                       <FormDescription>
-                        请使用 JSON 格式输入样例数据，每个样例包含输入、输出和解释说明
+                        {useJsonInput ? "请使用 JSON 格式输入样例数据，每个样例包含输入、输出和解释说明" : "直接输入样例数据，可以添加多个样例"}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

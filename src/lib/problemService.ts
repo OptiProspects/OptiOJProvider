@@ -3,7 +3,8 @@ import apiClient from '@/config/apiConfig';
 export interface Problem {
   id: number;
   title: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty_system: "normal" | "oi";
+  difficulty: Difficulty;
   is_public: boolean;
   created_at: string;
   updated_at: string;
@@ -15,6 +16,7 @@ export interface Problem {
     id: number;
     name: string;
     color: string;
+    created_at: string;
   }>;
 }
 
@@ -57,20 +59,20 @@ export const deleteProblem = async (problemId: number) => {
 };
 
 // 添加创建题目的接口类型
-export interface CreateProblemData {
-  title: string;
-  description: string;
-  input_description: string;
-  output_description: string;
-  samples: string;
-  hint?: string;
-  source?: string;
-  difficulty: "easy" | "medium" | "hard";
-  time_limit: number;
-  memory_limit: number;
-  is_public: boolean;
-  category_ids: number[];
-  tag_ids: number[];
+export type CreateProblemData = {
+  title: string
+  description: string
+  input_description: string
+  output_description: string
+  samples: string
+  hint?: string
+  source?: string
+  difficulty: string
+  time_limit: number
+  memory_limit: number
+  is_public: boolean
+  category_ids: number[]
+  tag_ids: number[]
 }
 
 // 添加创建题目的方法
@@ -150,7 +152,8 @@ export interface PublicProblem {
   id: number;
   title: string;
   description: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty_system: "normal" | "oi";
+  difficulty: Difficulty;
   time_limit: number;
   memory_limit: number;
   is_public: boolean;
@@ -158,23 +161,42 @@ export interface PublicProblem {
   categories: Array<{
     id: number;
     name: string;
-    description: string;
   }>;
   tags: Array<{
     id: number;
     name: string;
     color: string;
+    created_at: string;
   }>;
 }
 
-export interface ProblemDetail extends PublicProblem {
+export interface ProblemDetail {
+  id: number;
+  title: string;
+  description: string;
   input_description: string;
   output_description: string;
   samples: string;
   hint?: string;
   source?: string;
+  difficulty_system: "normal" | "oi";
+  difficulty: Difficulty;
+  time_limit: number;
+  memory_limit: number;
+  is_public: boolean;
   created_by: number;
+  created_at: string;
   updated_at: string;
+  categories: Array<{
+    id: number;
+    name: string;
+  }>;
+  tags: Array<{
+    id: number;
+    name: string;
+    color: string;
+    created_at: string;
+  }>;
 }
 
 // 获取公开题目列表
@@ -242,21 +264,7 @@ export const getTestCaseContent = async (id: number) => {
 };
 
 // 添加更新题目的接口类型
-export interface UpdateProblemData {
-  title?: string;
-  description?: string;
-  input_description?: string;
-  output_description?: string;
-  samples?: string;
-  hint?: string;
-  source?: string;
-  difficulty?: "easy" | "medium" | "hard";
-  time_limit?: number;
-  memory_limit?: number;
-  is_public?: boolean;
-  category_ids?: number[];
-  tag_ids?: number[];
-}
+export type UpdateProblemData = CreateProblemData
 
 // 添加更新题目的方法
 export const updateProblem = async (id: number, data: UpdateProblemData) => {
@@ -265,6 +273,57 @@ export const updateProblem = async (id: number, data: UpdateProblemData) => {
     return response.data;
   } catch (error) {
     console.error('更新题目失败:', error);
+    throw error;
+  }
+};
+
+// 添加难度系统类型
+export type DifficultySystem = "normal" | "oi"
+
+// 添加难度等级类型
+export type NormalDifficulty = "easy" | "medium" | "hard" | "unrated"
+export type OIDifficulty = "beginner" | "basic" | "basicplus" | "advanced" | "advplus" | "provincial" | "noi" | "unrated"
+export type Difficulty = NormalDifficulty | OIDifficulty
+
+export interface DifficultyInfo {
+  code: string;
+  display: string;
+}
+
+export interface SystemInfo {
+  system: DifficultySystem;
+  name: string;
+  difficulties: DifficultyInfo[];
+}
+
+export interface DifficultySystemResponse {
+  current_system: DifficultySystem;
+  systems: SystemInfo[];
+}
+
+// 获取当前难度系统的方法
+export const getCurrentDifficultySystem = async () => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: DifficultySystemResponse;
+    }>('/problems/difficulty-system');
+    return response.data.data;
+  } catch (error) {
+    console.error('获取当前难度系统失败:', error);
+    throw error;
+  }
+};
+
+// 添加难度系统切换的方法
+export const switchDifficultySystem = async (system: DifficultySystem) => {
+  try {
+    const response = await apiClient.post('/problems/switch-difficulty-system', {
+      difficulty_system: system
+    });
+    return response.data;
+  } catch (error) {
+    console.error('切换难度系统失败:', error);
     throw error;
   }
 }; 

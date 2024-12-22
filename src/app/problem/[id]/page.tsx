@@ -16,21 +16,34 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/ui/spinner"
-import { getProblemDetail } from "@/lib/problemService"
+import { getProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { ProblemDetail } from "@/lib/problemService"
 import { SubmitDialog } from "@/components/submission/submit-dialog"
 import { SubmissionList } from "@/components/submission/submission-list"
 
-const difficultyMap = {
+const normalDifficultyMap = {
   easy: { label: "简单", color: "success" as const },
   medium: { label: "中等", color: "secondary" as const },
-  hard: { label: "困难", color: "destructive" as const }
+  hard: { label: "困难", color: "destructive" as const },
+  unrated: { label: "暂无评级", color: "outline" as const }
+} as const
+
+const oiDifficultyMap = {
+  beginner: { label: "入门/蒟蒻", color: "success" as const },
+  basic: { label: "普及-", color: "success" as const },
+  basicplus: { label: "普及/提高-", color: "secondary" as const },
+  advanced: { label: "普及+/提高", color: "secondary" as const },
+  advplus: { label: "提高+/省选-", color: "destructive" as const },
+  provincial: { label: "省选/NOI-", color: "destructive" as const },
+  noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
+  unrated: { label: "暂无评级", color: "outline" as const }
 } as const
 
 export default function ProblemDetailPage() {
   const params = useParams()
   const [problem, setProblem] = React.useState<ProblemDetail | null>(null)
   const [loading, setLoading] = React.useState(true)
+  const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
 
   React.useEffect(() => {
     const fetchProblem = async () => {
@@ -46,6 +59,16 @@ export default function ProblemDetailPage() {
 
     fetchProblem()
   }, [params.id])
+
+  React.useEffect(() => {
+    getCurrentDifficultySystem()
+      .then(system => {
+        setDifficultySystem(system)
+      })
+      .catch(error => {
+        console.error("获取难度系统失败:", error)
+      })
+  }, [])
 
   if (loading) {
     return (
@@ -65,6 +88,26 @@ export default function ProblemDetailPage() {
       </div>
     )
   }
+
+  const getDifficultyLabel = (difficulty: Difficulty) => {
+    if (!difficultySystem) return { label: difficulty, color: "outline" as const }
+    
+    const currentSystemInfo = difficultySystem.systems.find(
+      sys => sys.system === problem.difficulty_system
+    )
+    if (!currentSystemInfo) return { label: difficulty, color: "outline" as const }
+
+    const difficultyInfo = currentSystemInfo.difficulties.find(
+      diff => diff.code === difficulty
+    )
+    if (!difficultyInfo) return { label: difficulty, color: "outline" as const }
+
+    const isOiSystem = problem.difficulty_system === "oi"
+    const map = isOiSystem ? oiDifficultyMap : normalDifficultyMap
+    return map[difficulty as keyof typeof map] || { label: difficultyInfo.display, color: "outline" as const }
+  }
+
+  const difficultyInfo = getDifficultyLabel(problem.difficulty)
 
   const MarkdownContent = ({ children }: { children: string }) => (
     <div className="prose prose-neutral dark:prose-invert max-w-none">
@@ -90,8 +133,8 @@ export default function ProblemDetailPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Badge variant={difficultyMap[problem.difficulty].color}>
-                {difficultyMap[problem.difficulty].label}
+              <Badge variant={difficultyInfo.color}>
+                {difficultyInfo.label}
               </Badge>
               <div className="text-sm text-muted-foreground">
                 时间限制: {problem.time_limit}ms

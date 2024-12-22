@@ -32,13 +32,25 @@ import {
 } from "@/components/ui/pagination"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { getPublicProblemList } from "@/lib/problemService"
+import { getPublicProblemList, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { PublicProblem } from "@/lib/problemService"
 
-const difficultyMap = {
+const normalDifficultyMap = {
   easy: { label: "简单", color: "success" as const },
   medium: { label: "中等", color: "secondary" as const },
-  hard: { label: "困难", color: "destructive" as const }
+  hard: { label: "困难", color: "destructive" as const },
+  unrated: { label: "暂无评级", color: "outline" as const }
+} as const
+
+const oiDifficultyMap = {
+  beginner: { label: "入门/蒟蒻", color: "success" as const },
+  basic: { label: "普及-", color: "success" as const },
+  basicplus: { label: "普及/提高-", color: "secondary" as const },
+  advanced: { label: "普及+/提高", color: "secondary" as const },
+  advplus: { label: "提高+/省选-", color: "destructive" as const },
+  provincial: { label: "省选/NOI-", color: "destructive" as const },
+  noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
+  unrated: { label: "暂无评级", color: "outline" as const }
 } as const
 
 export default function ProblemList() {
@@ -48,6 +60,7 @@ export default function ProblemList() {
   const [problems, setProblems] = React.useState<PublicProblem[]>([])
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
+  const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
   
   const page = Number(searchParams.get("page")) || 1
   const searchTitle = searchParams.get("title") || ""
@@ -62,7 +75,7 @@ export default function ProblemList() {
         title: searchTitle || undefined,
         difficulty: difficulty !== "all" ? difficulty : undefined,
       })
-      setProblems(result.problems)
+      setProblems(result.problems || [])
       setTotal(result.total)
     } catch (error) {
       console.error("Failed to fetch problems:", error)
@@ -74,6 +87,16 @@ export default function ProblemList() {
   React.useEffect(() => {
     fetchProblems()
   }, [fetchProblems])
+
+  React.useEffect(() => {
+    getCurrentDifficultySystem()
+      .then(system => {
+        setDifficultySystem(system)
+      })
+      .catch(error => {
+        console.error("获取难度系统失败:", error)
+      })
+  }, [])
 
   const updateSearchParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams)
@@ -88,6 +111,24 @@ export default function ProblemList() {
   }
 
   const totalPages = Math.ceil(total / 20)
+
+  const getDifficultyLabel = (difficulty: Difficulty) => {
+    if (!difficultySystem) return { label: difficulty, color: "outline" as const }
+    
+    const currentSystemInfo = difficultySystem.systems.find(
+      sys => sys.system === difficultySystem.current_system
+    )
+    if (!currentSystemInfo) return { label: difficulty, color: "outline" as const }
+
+    const difficultyInfo = currentSystemInfo.difficulties.find(
+      diff => diff.code === difficulty
+    )
+    if (!difficultyInfo) return { label: difficulty, color: "outline" as const }
+
+    const isOiSystem = difficultySystem.current_system === "oi"
+    const map = isOiSystem ? oiDifficultyMap : normalDifficultyMap
+    return map[difficulty as keyof typeof map] || { label: difficultyInfo.display, color: "outline" as const }
+  }
 
   return (
     <div className="space-y-4">
@@ -112,9 +153,13 @@ export default function ProblemList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">全部难度</SelectItem>
-            <SelectItem value="easy">简单</SelectItem>
-            <SelectItem value="medium">中等</SelectItem>
-            <SelectItem value="hard">困难</SelectItem>
+            {difficultySystem && difficultySystem.systems
+              .find(sys => sys.system === difficultySystem.current_system)
+              ?.difficulties.map(diff => (
+                <SelectItem key={diff.code} value={diff.code}>
+                  {diff.display}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -123,11 +168,11 @@ export default function ProblemList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]">ID</TableHead>
-              <TableHead>标题</TableHead>
-              <TableHead className="w-[100px]">难度</TableHead>
-              <TableHead>分类</TableHead>
-              <TableHead>标签</TableHead>
+              <TableHead className="w-[80px] text-center">ID</TableHead>
+              <TableHead className="text-center">标题</TableHead>
+              <TableHead className="w-[100px] text-center">难度</TableHead>
+              <TableHead className="text-center">分类</TableHead>
+              <TableHead className="text-center">标签</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -146,8 +191,8 @@ export default function ProblemList() {
             ) : (
               problems.map((problem) => (
                 <TableRow key={problem.id}>
-                  <TableCell>#{problem.id}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">#{problem.id}</TableCell>
+                  <TableCell className="text-center">
                     <Link
                       href={`/problem/${problem.id}`}
                       className="hover:underline"
@@ -155,13 +200,13 @@ export default function ProblemList() {
                       {problem.title}
                     </Link>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={difficultyMap[problem.difficulty].color}>
-                      {difficultyMap[problem.difficulty].label}
+                  <TableCell className="text-center">
+                    <Badge variant={getDifficultyLabel(problem.difficulty).color}>
+                      {getDifficultyLabel(problem.difficulty).label}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap justify-center gap-1">
                       {problem.categories.map((category) => (
                         <Badge
                           key={category.id}
@@ -173,7 +218,7 @@ export default function ProblemList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap justify-center gap-1">
                       {problem.tags.map((tag) => (
                         <Badge
                           key={tag.id}

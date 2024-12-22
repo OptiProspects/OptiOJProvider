@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Plus } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Plus, Settings2 } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -52,16 +52,29 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Spinner } from "@/components/ui/spinner"
-import { getProblemList, deleteProblem, getProblemDetail } from "@/lib/problemService"
+import { getProblemList, deleteProblem, getProblemDetail, switchDifficultySystem, getCurrentDifficultySystem, type DifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { Problem, ProblemDetail } from "@/lib/problemService"
 import { CreateProblemDialog } from "./create-dialog"
 import { EditProblemDialog } from "./edit-dialog"
 import { TestCaseDialog } from "./testcase-dialog"
+import { DifficultySystemDialog } from "./difficulty-system-dialog"
 
-const difficultyMap = {
+const normalDifficultyMap = {
   easy: { label: "简单", color: "success" as const },
   medium: { label: "中等", color: "secondary" as const },
-  hard: { label: "困难", color: "destructive" as const }
+  hard: { label: "困难", color: "destructive" as const },
+  unrated: { label: "暂无评级", color: "outline" as const }
+} as const
+
+const oiDifficultyMap = {
+  beginner: { label: "入门/蒟蒻", color: "success" as const },
+  basic: { label: "普及-", color: "success" as const },
+  basicplus: { label: "普及/提高-", color: "secondary" as const },
+  advanced: { label: "普及+/提高", color: "secondary" as const },
+  advplus: { label: "提高+/省选-", color: "destructive" as const },
+  provincial: { label: "省选/NOI-", color: "destructive" as const },
+  noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
+  unrated: { label: "暂无评级", color: "outline" as const }
 } as const
 
 export default function ProblemPage() {
@@ -85,6 +98,9 @@ export default function ProblemPage() {
   const [selectedProblemId, setSelectedProblemId] = React.useState<number>(0)
   const [selectedProblem, setSelectedProblem] = React.useState<ProblemDetail | null>(null)
 
+  const [difficultySystemDialogOpen, setDifficultySystemDialogOpen] = React.useState(false)
+  const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
+
   const fetchData = React.useCallback(async () => {
     setLoading(true)
     try {
@@ -96,7 +112,7 @@ export default function ProblemPage() {
         is_public: isPublic !== "all" ? isPublic === "public" : undefined
       });
       
-      setData(result.problems)
+      setData(result.problems || [])
       setTotal(result.total)
     } catch (error: any) {
       toast.error("加载失败", {
@@ -111,23 +127,69 @@ export default function ProblemPage() {
     fetchData()
   }, [fetchData])
 
+  React.useEffect(() => {
+    getCurrentDifficultySystem()
+      .then(system => {
+        setDifficultySystem(system)
+      })
+      .catch(error => {
+        toast.error("获取难度系统失败", {
+          description: error.response?.data?.message || "请稍后重试"
+        })
+      })
+  }, [])
+
+  const handleSwitchDifficultySystem = async (system: DifficultySystem) => {
+    try {
+      await switchDifficultySystem(system)
+      const newSystem = await getCurrentDifficultySystem()
+      setDifficultySystem(newSystem)
+      toast.success("切换成功")
+      fetchData()
+    } catch (error: any) {
+      toast.error("切换失败", {
+        description: error.response?.data?.message || "请稍后重试"
+      })
+    }
+  }
+
+  const getDifficultyLabel = (difficulty: Difficulty) => {
+    if (!difficultySystem) return { label: difficulty, color: "outline" as const }
+    
+    const currentSystemInfo = difficultySystem.systems.find(
+      sys => sys.system === difficultySystem.current_system
+    )
+    if (!currentSystemInfo) return { label: difficulty, color: "outline" as const }
+
+    const difficultyInfo = currentSystemInfo.difficulties.find(
+      diff => diff.code === difficulty
+    )
+    if (!difficultyInfo) return { label: difficulty, color: "outline" as const }
+
+    const isOiSystem = difficultySystem.current_system === "oi"
+    const map = isOiSystem ? oiDifficultyMap : normalDifficultyMap
+    return map[difficulty as keyof typeof map] || { label: difficultyInfo.display, color: "outline" as const }
+  }
+
   const columns: ColumnDef<Problem>[] = [
     {
       accessorKey: "id",
       header: ({ column }) => {
         return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-8 w-full justify-center font-medium"
-          >
-            ID
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-8 w-full justify-center font-medium"
+            >
+              ID
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         )
       },
       cell: ({ row }) => (
-        <div className="flex h-full items-center justify-center text-muted-foreground">
+        <div className="text-center text-muted-foreground">
           #{row.getValue("id")}
         </div>
       ),
@@ -136,31 +198,34 @@ export default function ProblemPage() {
       accessorKey: "title",
       header: ({ column }) => {
         return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-8 w-full justify-center font-medium"
-          >
-            标题
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-8 w-full justify-center font-medium"
+            >
+              标题
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         )
       },
       cell: ({ row }) => (
-        <div className="flex h-full items-center justify-center">
+        <div className="text-center">
           {row.getValue("title")}
         </div>
       ),
     },
     {
       accessorKey: "difficulty",
-      header: () => <div className="font-medium">难度</div>,
+      header: () => <div className="text-center font-medium">难度</div>,
       cell: ({ row }) => {
-        const difficulty = row.getValue("difficulty") as keyof typeof difficultyMap
+        const difficulty = row.getValue("difficulty") as Difficulty
+        const { label, color } = getDifficultyLabel(difficulty)
         return (
-          <div className="flex h-full items-center justify-center">
-            <Badge variant={difficultyMap[difficulty].color}>
-              {difficultyMap[difficulty].label}
+          <div className="text-center">
+            <Badge variant={color}>
+              {label}
             </Badge>
           </div>
         )
@@ -168,11 +233,11 @@ export default function ProblemPage() {
     },
     {
       accessorKey: "categories",
-      header: () => <div className="font-medium">分类</div>,
+      header: () => <div className="text-center font-medium">分类</div>,
       cell: ({ row }) => {
         const categories = row.getValue("categories") as Problem["categories"]
         return (
-          <div className="flex h-full items-center justify-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             {categories.map(category => (
               <Badge key={category.id} variant="outline">
                 {category.name}
@@ -184,11 +249,11 @@ export default function ProblemPage() {
     },
     {
       accessorKey: "tags",
-      header: () => <div className="font-medium">标签</div>,
+      header: () => <div className="text-center font-medium">标签</div>,
       cell: ({ row }) => {
         const tags = row.getValue("tags") as Problem["tags"]
         return (
-          <div className="flex h-full items-center justify-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             {tags.map(tag => (
               <Badge 
                 key={tag.id} 
@@ -206,11 +271,11 @@ export default function ProblemPage() {
     },
     {
       accessorKey: "is_public",
-      header: () => <div className="font-medium">状态</div>,
+      header: () => <div className="text-center font-medium">状态</div>,
       cell: ({ row }) => {
         const isPublic = row.getValue("is_public") as boolean
         return (
-          <div className="flex h-full items-center justify-center">
+          <div className="text-center">
             <Badge variant={isPublic ? "success" : "secondary"}>
               {isPublic ? "公开" : "私有"}
             </Badge>
@@ -220,7 +285,7 @@ export default function ProblemPage() {
     },
     {
       accessorKey: "created_at",
-      header: () => <div className="text-center">创建时间</div>,
+      header: () => <div className="text-center font-medium">创建时间</div>,
       cell: ({ row }) => (
         <div className="text-center">
           {format(new Date(row.getValue("created_at")), "yyyy-MM-dd HH:mm:ss")}
@@ -229,11 +294,12 @@ export default function ProblemPage() {
     },
     {
       id: "actions",
+      header: () => <div className="text-center font-medium">操作</div>,
       cell: ({ row }) => {
         const problem = row.original
 
         return (
-          <div className="flex h-full items-center justify-center">
+          <div className="text-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -318,6 +384,13 @@ export default function ProblemPage() {
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">题目管理</h2>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setDifficultySystemDialogOpen(true)}
+        >
+          <Settings2 className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex items-center gap-4">
@@ -336,9 +409,13 @@ export default function ProblemPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">全部难度</SelectItem>
-            <SelectItem value="easy">简单</SelectItem>
-            <SelectItem value="medium">中等</SelectItem>
-            <SelectItem value="hard">困难</SelectItem>
+            {difficultySystem && difficultySystem.systems
+              .find(sys => sys.system === difficultySystem.current_system)
+              ?.difficulties.map(diff => (
+                <SelectItem key={diff.code} value={diff.code}>
+                  {diff.display}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
         
@@ -477,6 +554,13 @@ export default function ProblemPage() {
         open={testcaseDialogOpen}
         onOpenChange={setTestcaseDialogOpen}
         problemId={selectedProblemId}
+      />
+
+      <DifficultySystemDialog
+        open={difficultySystemDialogOpen}
+        onOpenChange={setDifficultySystemDialogOpen}
+        onConfirm={handleSwitchDifficultySystem}
+        currentSystem={difficultySystem?.current_system || "normal"}
       />
     </div>
   )

@@ -49,7 +49,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { updateProblem, type ProblemDetail } from "@/lib/problemService"
+import { updateProblem, type ProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
 
@@ -68,7 +68,7 @@ const formSchema = z.object({
   }),
   hint: z.string().optional(),
   source: z.string().optional(),
-  difficulty: z.enum(["easy", "medium", "hard"]),
+  difficulty: z.string().min(1, "请选择难度"),
   time_limit: z.number().min(100).max(10000),
   memory_limit: z.number().min(16).max(1024),
   is_public: z.boolean(),
@@ -101,6 +101,7 @@ export function EditProblemDialog({
 }: EditProblemDialogProps) {
   const [tags, setTags] = React.useState<Tag[]>([])
   const [tagsOpen, setTagsOpen] = React.useState(false)
+  const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -141,6 +142,21 @@ export function EditProblemDialog({
         })
         .catch(error => {
           toast.error("获取标签列表失败", {
+            description: error.message || "请稍后重试"
+          })
+        })
+    }
+  }, [open])
+
+  // 获取当前难度系统
+  React.useEffect(() => {
+    if (open) {
+      getCurrentDifficultySystem()
+        .then(system => {
+          setDifficultySystem(system)
+        })
+        .catch(error => {
+          toast.error("获取难度系统失败", {
             description: error.message || "请稍后重试"
           })
         })
@@ -311,9 +327,13 @@ export function EditProblemDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="easy">简单</SelectItem>
-                            <SelectItem value="medium">中等</SelectItem>
-                            <SelectItem value="hard">困难</SelectItem>
+                            {(difficultySystem?.systems
+                              .find(sys => sys.system === difficultySystem.current_system)
+                              ?.difficulties.map(diff => (
+                                <SelectItem key={diff.code} value={diff.code}>
+                                  {diff.display}
+                                </SelectItem>
+                              ))) ?? null}
                           </SelectContent>
                         </Select>
                         <FormMessage />

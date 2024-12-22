@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Shuffle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -282,6 +283,13 @@ export function ColorPicker({ open, onOpenChange, value, onChange }: ColorPicker
     onChange(newValue)
   }
 
+  const handleRandomColor = () => {
+    const r = Math.floor(Math.random() * 256)
+    const g = Math.floor(Math.random() * 256)
+    const b = Math.floor(Math.random() * 256)
+    handleColorChange(rgbToHex(r, g, b))
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
@@ -296,11 +304,20 @@ export function ColorPicker({ open, onOpenChange, value, onChange }: ColorPicker
               </div>
               <HueSlider color={localValue} onChange={handleColorChange} />
             </div>
-            <div className="w-20">
+            <div className="w-20 space-y-2">
               <div
                 className="w-full h-20 rounded-lg border shadow-sm"
                 style={{ backgroundColor: localValue }}
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="w-full"
+                onClick={handleRandomColor}
+              >
+                <Shuffle className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 

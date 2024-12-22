@@ -3,13 +3,12 @@
 import * as React from "react"
 import {
   BookOpen,
-  Bot,
   Frame,
   Map,
   PieChart,
   Settings2,
-  SquareTerminal,
-  UserCogIcon
+  UserCogIcon,
+  MonitorCogIcon
 } from "lucide-react"
 import { getUserData, getAvatar } from "@/lib/profileService"
 import { useEffect, useState } from "react"
@@ -52,43 +51,39 @@ const data = {
       ],
     },
     {
-      title: "Models",
+      title: "平台管理",
       url: "#",
-      icon: Bot,
+      icon: MonitorCogIcon,
       items: [
         {
-          title: "Genesis",
+          title: "公告管理",
           url: "#",
         },
         {
-          title: "Explorer",
+          title: "竞赛管理",
           url: "#",
         },
         {
-          title: "Quantum",
+          title: "课程管理",
           url: "#",
         },
       ],
     },
     {
-      title: "Documentation",
+      title: "题库管理",
       url: "#",
       icon: BookOpen,
       items: [
         {
-          title: "Introduction",
+          title: "题库列表",
+          url: "/panel/problem",
+        },
+        {
+          title: "新增题目",
           url: "#",
         },
         {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
+          title: "导入题目",
           url: "#",
         },
       ],

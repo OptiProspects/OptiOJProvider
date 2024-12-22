@@ -195,7 +195,7 @@ const GenerateUsersForm = () => {
     <>
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>批量生成用户</CardTitle>
+          <CardTitle className="text-2xl">批量生成用户</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

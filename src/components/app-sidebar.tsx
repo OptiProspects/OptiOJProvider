@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import * as React from "react"
 import {
@@ -79,8 +79,8 @@ const data = {
           url: "/panel/problem",
         },
         {
-          title: "新增题目",
-          url: "#",
+          title: "标签列表",
+          url: "/panel/problem/tags",
         },
         {
           title: "导入题目",

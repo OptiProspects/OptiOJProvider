@@ -239,4 +239,15 @@ export const getTestCaseContent = async (id: number) => {
     console.error('获取测试用例内容失败:', error);
     throw error;
   }
+};
+
+// 添加更新题目的方法
+export const updateProblem = async (id: number, data: CreateProblemData) => {
+  try {
+    const response = await apiClient.put(`/problems/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('更新题目失败:', error);
+    throw error;
+  }
 }; 

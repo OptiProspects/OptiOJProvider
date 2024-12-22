@@ -56,7 +56,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { createProblem } from "@/lib/problemService"
+import { createProblem, updateProblem, type Problem } from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
 
@@ -85,10 +85,11 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
-interface CreateProblemDialogProps {
+interface ProblemDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
+  problem?: Problem
 }
 
 const editorStyles = {
@@ -99,11 +100,12 @@ const editorStyles = {
   editor: "wmde-markdown-var [--color-canvas-default:transparent] [--color-btn-bg:transparent] [--color-border-default:transparent]"
 }
 
-export function CreateProblemDialog({
+export function ProblemDialog({
   open,
   onOpenChange,
-  onSuccess
-}: CreateProblemDialogProps) {
+  onSuccess,
+  problem
+}: ProblemDialogProps) {
   const [tags, setTags] = React.useState<Tag[]>([])
   const [tagsOpen, setTagsOpen] = React.useState(false)
 
@@ -122,6 +124,27 @@ export function CreateProblemDialog({
     },
     shouldUnregister: false
   })
+
+  // 在编辑模式下预填充表单数据
+  React.useEffect(() => {
+    if (problem) {
+      form.reset({
+        title: problem.title,
+        description: problem.description,
+        input_description: problem.input_description,
+        output_description: problem.output_description,
+        samples: problem.samples,
+        hint: problem.hint || '',
+        source: problem.source || '',
+        difficulty: problem.difficulty,
+        time_limit: problem.time_limit,
+        memory_limit: problem.memory_limit,
+        is_public: problem.is_public,
+        category_ids: problem.categories.map(c => c.id),
+        tag_ids: problem.tags.map(t => t.id)
+      })
+    }
+  }, [problem, form])
 
   const tagIds = useWatch({
     control: form.control,
@@ -150,13 +173,18 @@ export function CreateProblemDialog({
 
   const onSubmit = async (data: FormData) => {
     try {
-      await createProblem(data)
-      toast.success("创建成功")
+      if (problem) {
+        await updateProblem(problem.id, data)
+        toast.success("更新成功")
+      } else {
+        await createProblem(data)
+        toast.success("创建成功")
+      }
       form.reset()
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {
-      toast.error("创建失败", {
+      toast.error(problem ? "更新失败" : "创建失败", {
         description: error.response?.data?.message || "请稍后重试"
       })
     }
@@ -168,9 +196,9 @@ export function CreateProblemDialog({
         <ScrollArea className="h-[90vh]">
           <div className="p-6 space-y-6">
             <DialogHeader>
-              <DialogTitle>创建题目</DialogTitle>
+              <DialogTitle>{problem ? "编辑题目" : "创建题目"}</DialogTitle>
               <DialogDescription>
-                创建一个新的题目，填写题目的基本信息。支持 Markdown 格式。
+                {problem ? "编辑题目信息" : "创建一个新的题目"}。支持 Markdown 格式。
               </DialogDescription>
             </DialogHeader>
 

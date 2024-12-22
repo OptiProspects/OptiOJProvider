@@ -215,4 +215,28 @@ export const getProblemDetail = async (id: number) => {
     console.error('获取题目详情失败:', error);
     throw error;
   }
+};
+
+// 添加测试用例内容的接口类型
+export interface TestCaseContent {
+  id: number;
+  local_id: number;
+  problem_id: number;
+  input: string;
+  output: string;
+  is_sample: boolean;
+}
+
+// 获取测试用例内容
+export const getTestCaseContent = async (id: number) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: TestCaseContent;
+    }>(`/testcases/${id}/content`);
+    return response.data.data;
+  } catch (error) {
+    console.error('获取测试用例内容失败:', error);
+    throw error;
+  }
 }; 

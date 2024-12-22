@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from "react"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { toast } from "sonner"
 import { MoreHorizontal, Plus, Pencil, Trash2 } from "lucide-react"
 
@@ -221,10 +221,10 @@ export default function TagsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(tag.created_at), "yyyy-MM-dd HH:mm:ss")}
+                    {format(parseISO(tag.created_at), "yyyy-MM-dd HH:mm:ss")}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(tag.updated_at), "yyyy-MM-dd HH:mm:ss")}
+                    {tag.updated_at ? format(parseISO(tag.updated_at), "yyyy-MM-dd HH:mm:ss") : "-"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

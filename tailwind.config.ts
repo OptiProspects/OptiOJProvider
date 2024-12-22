@@ -65,8 +65,59 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		typography: {
+  			DEFAULT: {
+  				css: {
+  					'code::before': {
+  						content: '""'
+  					},
+  					'code::after': {
+  						content: '""'
+  					},
+  					'blockquote p:first-of-type::before': {
+  						content: '""'
+  					},
+  					'blockquote p:last-of-type::after': {
+  						content: '""'
+  					},
+  					code: {
+  						backgroundColor: 'hsl(var(--muted))',
+  						padding: '0.2em 0.4em',
+  						borderRadius: '0.25rem',
+  						fontWeight: '400',
+  					},
+  					'code, pre': {
+  						fontFamily: 'var(--font-mono)'
+  					},
+  					'ol > li::marker': {
+  						color: 'hsl(var(--foreground))',
+  						fontWeight: '400'
+  					},
+  					'ul > li::marker': {
+  						color: 'hsl(var(--foreground))'
+  					},
+  					blockquote: {
+  						borderLeftColor: 'hsl(var(--primary))',
+  						borderLeftWidth: '4px',
+  						marginTop: '1rem',
+  						marginBottom: '1rem',
+  						paddingLeft: '1rem',
+  						color: 'hsl(var(--muted-foreground))',
+  						fontStyle: 'normal',
+  						fontWeight: 'normal'
+  					},
+  					strong: {
+  						color: 'hsl(var(--foreground))',
+  						fontWeight: '600'
+  					}
+  				}
+  			}
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography")
+  ],
 } satisfies Config;

@@ -110,7 +110,7 @@ export default function ProblemDetailPage() {
   const difficultyInfo = getDifficultyLabel(problem.difficulty)
 
   const MarkdownContent = ({ children }: { children: string }) => (
-    <div className="prose prose-neutral dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert max-w-none">
       <Markdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeHighlight, rehypeKatex]}

@@ -90,6 +90,8 @@ export default function ProblemDetailPage() {
   const [loading, setLoading] = React.useState(true)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
   const [isEditorOpen, setIsEditorOpen] = React.useState(false)
+  const [editorWidth, setEditorWidth] = React.useState(800)
+  const [isResizing, setIsResizing] = React.useState(false)
 
   React.useEffect(() => {
     const fetchProblem = async () => {
@@ -115,6 +117,31 @@ export default function ProblemDetailPage() {
         console.error("获取难度系统失败:", error)
       })
   }, [])
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    setIsResizing(true)
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+  }
+
+  const handleResizeMove = React.useCallback((e: MouseEvent) => {
+    if (!isResizing) return
+    const newWidth = window.innerWidth - e.clientX
+    setEditorWidth(Math.min(Math.max(400, newWidth), window.innerWidth - 400))
+  }, [isResizing])
+
+  const handleResizeEnd = React.useCallback(() => {
+    setIsResizing(false)
+    document.removeEventListener('mousemove', handleResizeMove)
+    document.removeEventListener('mouseup', handleResizeEnd)
+  }, [handleResizeMove])
+
+  React.useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }, [handleResizeMove, handleResizeEnd])
 
   if (loading) {
     return (
@@ -170,13 +197,11 @@ export default function ProblemDetailPage() {
     <div className="h-screen flex flex-col overflow-hidden">
       <Navbar />
       <main className="flex-1 flex relative overflow-hidden">
-        <div className={cn(
-          "flex-1 transition-all duration-300 ease-in-out transform",
-          isEditorOpen ? "mr-[800px]" : "mr-0"
-        )}>
+        {/* 左侧题目区域 */}
+        <div className="h-full" style={{ width: isEditorOpen ? `calc(100% - ${editorWidth}px)` : '100%' }}>
           <ScrollArea className="h-full">
-            <div className="container max-w-screen-xl mx-auto px-4 py-8">
-              <div className="max-w-4xl mx-auto space-y-8">
+            <div className="w-full px-4 py-8">
+              <div className="max-w-full space-y-8">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">
@@ -283,21 +308,52 @@ export default function ProblemDetailPage() {
                 </Tabs>
               </div>
             </div>
-            <ScrollBar orientation="vertical" className="z-50" />
+            <ScrollBar orientation="vertical" className="z-10" />
           </ScrollArea>
         </div>
 
-        <CodeEditor isOpen={isEditorOpen} onOpenChange={setIsEditorOpen} problem={problem} />
-
-        <button
-          onClick={() => setIsEditorOpen(!isEditorOpen)}
-          className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border-l border-y text-foreground rounded-l-md shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.3)] transition-all duration-300 ease-in-out z-50"
-          style={{
-            right: isEditorOpen ? "800px" : "0"
+        {/* 右侧编辑器区域 */}
+        <div 
+          className="h-full relative"
+          style={{ 
+            width: isEditorOpen ? `${editorWidth}px` : 0,
+            display: isEditorOpen ? 'block' : 'none'
           }}
         >
-          {isEditorOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
+          {/* 分隔条 */}
+          <div
+            className="absolute -left-2 top-0 w-4 h-full cursor-col-resize select-none flex items-center justify-center"
+            onMouseDown={handleResizeStart}
+          >
+            <div className="w-[2px] h-full bg-border hover:bg-primary/50 hover:w-1 transition-[width]" />
+          </div>
+
+          {/* 切换按钮 */}
+          {isEditorOpen && (
+            <button
+              onClick={() => setIsEditorOpen(false)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border text-foreground rounded-md z-10"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+          
+          <CodeEditor 
+            isOpen={isEditorOpen} 
+            onOpenChange={setIsEditorOpen} 
+            problem={problem}
+          />
+        </div>
+
+        {/* 展开按钮 */}
+        {!isEditorOpen && (
+          <button
+            onClick={() => setIsEditorOpen(true)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border text-foreground rounded-l-md z-20"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
       </main>
     </div>
   )

@@ -280,10 +280,7 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
   }, [])
 
   return (
-    <div className={cn(
-      "absolute top-0 right-0 h-[calc(100vh-4rem)] w-[800px] bg-background border-l shadow-lg transition-all duration-300 ease-in-out",
-      isOpen ? "translate-x-0" : "translate-x-full"
-    )}>
+    <div className="h-full bg-background border-l">
       <style>{monacoStyles}</style>
       <div className="h-full flex flex-col">
         <div className="p-2 border-b flex items-center justify-between">
@@ -430,16 +427,16 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
         </div>
         <div className="flex flex-col bg-background">
           <div className={cn(
-            "overflow-hidden transition-all duration-300 ease-in-out",
-            isDebugOpen ? "h-[400px]" : "h-0"
+            "overflow-hidden transition-[height] duration-300 ease-in-out",
+            isDebugOpen ? "h-[400px] border-t" : "h-0"
           )}>
             <div className={cn(
-              "h-[400px] transition-opacity duration-300",
+              "h-[400px] bg-background z-20 relative transition-opacity duration-300",
               isDebugOpen ? "opacity-100" : "opacity-0"
             )}>
               <div className="p-4 space-y-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="w-full grid grid-cols-2">
+                  <TabsList className="w-full grid grid-cols-2 bg-muted/50">
                     <TabsTrigger value="input">输入</TabsTrigger>
                     <TabsTrigger value="output">输出</TabsTrigger>
                   </TabsList>

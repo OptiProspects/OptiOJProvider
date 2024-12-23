@@ -27,23 +27,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { toast } from "sonner"
 import { debugCode, DebugResult } from '@/lib/debugService'
-
-// 配置 Monaco Editor 的 CDN 路径
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs',
-  },
-  'vs/nls': {
-    availableLanguages: {
-      '*': ''
-    }
-  }
-})
-
-// 确保加载语言支持
-loader.init().then(() => {
-  // 语言支持已加载
-})
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 // 添加一个全局样式来自定义 Monaco Editor 的滚动条
 const monacoStyles = `
@@ -62,6 +46,10 @@ const monacoStyles = `
 interface CodeEditorProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  problem?: {
+    samples: string
+    title: string
+  }
 }
 
 const languages = [
@@ -86,7 +74,7 @@ const themes = {
   ]
 }
 
-export function CodeEditor({ isOpen, onOpenChange }: CodeEditorProps) {
+export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
   const [code, setCode] = React.useState("")
   const [input, setInput] = React.useState("")
   const [isDebugOpen, setIsDebugOpen] = React.useState(false)
@@ -98,6 +86,36 @@ export function CodeEditor({ isOpen, onOpenChange }: CodeEditorProps) {
   const [fontSize, setFontSize] = React.useState(14)
   const [tabSize, setTabSize] = React.useState(4)
   const [language, setLanguage] = React.useState("cpp")
+  const [samples, setSamples] = React.useState<Array<{ input: string, output: string, explanation?: string }>>([])
+  const [expectedOutput, setExpectedOutput] = React.useState<string>("")
+  const [activeTab, setActiveTab] = React.useState("input")
+
+  React.useEffect(() => {
+    if (problem?.samples) {
+      try {
+        console.log('原始样例数据:', problem.samples)
+        const parsedSamples = JSON.parse(problem.samples)
+        console.log('解析后的样例数据:', parsedSamples)
+        setSamples(parsedSamples)
+      } catch (error) {
+        console.error('解析测试样例失败:', error)
+        console.error('样例数据:', problem.samples)
+      }
+    } else {
+      console.log('没有收到样例数据:', problem)
+    }
+  }, [problem?.samples])
+
+  const handleFillSample = (index: number) => {
+    console.log('点击样例按钮:', index)
+    console.log('当前样例列表:', samples)
+    const sample = samples[index]
+    if (sample) {
+      console.log('选中的样例:', sample)
+      setInput(sample.input)
+      setExpectedOutput(sample.output)
+    }
+  }
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor
@@ -230,16 +248,36 @@ export function CodeEditor({ isOpen, onOpenChange }: CodeEditorProps) {
         language,
         code,
         input,
+        expected_output: expectedOutput,
         time_limit: 1000,
         memory_limit: 256
       })
       setDebugResult(result)
+      setActiveTab("output")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '调试失败')
     } finally {
       setIsDebugging(false)
     }
   }
+
+  React.useEffect(() => {
+    // 在客户端初始化 Monaco Editor
+    loader.config({
+      paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs',
+      },
+      'vs/nls': {
+        availableLanguages: {
+          '*': ''
+        }
+      }
+    })
+
+    loader.init().then(() => {
+      // 语言支持已加载
+    })
+  }, [])
 
   return (
     <div className={cn(
@@ -342,7 +380,7 @@ export function CodeEditor({ isOpen, onOpenChange }: CodeEditorProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-0 flex flex-col">
           <div className="absolute inset-0">
             <Editor
               height="100%"
@@ -390,82 +428,169 @@ export function CodeEditor({ isOpen, onOpenChange }: CodeEditorProps) {
             />
           </div>
         </div>
-        <div className="border-t p-4 flex items-center justify-end gap-4">
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => setIsDebugOpen(!isDebugOpen)}
-          >
-            {isDebugOpen ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronUp className="h-4 w-4" />
-            )}
-            在线调试
-          </Button>
-          <Button
-            variant="default"
-            className="flex items-center gap-2"
-            onClick={() => {
-              // TODO: 实现提交代码功能
-              toast.info("提交代码功能开发中...")
-            }}
-          >
-            提交代码
-          </Button>
-        </div>
-        <div className={cn(
-          "border-t bg-background overflow-hidden transition-all duration-300 ease-in-out",
-          isDebugOpen ? "h-[400px] opacity-100" : "h-0 opacity-0"
-        )}>
-          <div className="p-4 space-y-4">
-            <div className="space-y-2">
-              <div className="text-sm font-medium">输入数据</div>
-              <Textarea
-                placeholder="请输入测试数据..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="h-24 font-mono"
-              />
-            </div>
-            <Button
-              className="w-full"
-              onClick={handleDebug}
-              disabled={isDebugging}
-            >
-              {isDebugging ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  调试中...
-                </>
-              ) : (
-                <>
-                  <Play className="mr-2 h-4 w-4" />
-                  运行代码
-                </>
-              )}
-            </Button>
-            {debugResult && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <div>状态：<span className={cn(
-                    "font-medium",
-                    debugResult.status === "accepted" ? "text-green-500" : "text-red-500"
-                  )}>{debugResult.status === "accepted" ? "通过" : "失败"}</span></div>
-                  <div>
-                    运行时间：{debugResult.time_used}ms | 
-                    内存使用：{debugResult.memory_used}MB
-                  </div>
-                </div>
-                <ScrollArea className="h-32 rounded-md border">
-                  <div className="p-4 font-mono text-sm whitespace-pre">
-                    {debugResult.error_message ? (
-                      <span className="text-red-500">{debugResult.error_message}</span>
-                    ) : debugResult.output}
-                  </div>
-                </ScrollArea>
+        <div className="flex flex-col bg-background">
+          <div className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            isDebugOpen ? "h-[400px]" : "h-0"
+          )}>
+            <div className={cn(
+              "h-[400px] transition-opacity duration-300",
+              isDebugOpen ? "opacity-100" : "opacity-0"
+            )}>
+              <div className="p-4 space-y-4">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="input">输入</TabsTrigger>
+                    <TabsTrigger value="output">输出</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="input" className="space-y-4 mt-4">
+                    {samples.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        <div className="text-sm font-medium w-full">测试样例</div>
+                        {samples.map((sample, index) => (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleFillSample(index)}
+                            className="flex items-center gap-2"
+                          >
+                            样例 {index + 1}
+                            {sample.explanation && (
+                              <span className="text-xs text-muted-foreground">
+                                ({sample.explanation})
+                              </span>
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">输入数据</div>
+                      <Textarea
+                        placeholder="请输入测试数据..."
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        className="h-32 font-mono"
+                      />
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={handleDebug}
+                      disabled={isDebugging}
+                    >
+                      {isDebugging ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          调试中...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-2 h-4 w-4" />
+                          运行代码
+                        </>
+                      )}
+                    </Button>
+                  </TabsContent>
+                  <TabsContent value="output" className="mt-4">
+                    {debugResult && (
+                      <ScrollArea className="h-[calc(400px-4rem)] pr-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between text-sm">
+                            <div>状态：
+                              <span className={cn(
+                                "font-medium",
+                                debugResult.status === "accepted" 
+                                  ? debugResult.is_correct 
+                                    ? "text-green-500" 
+                                    : "text-yellow-500"
+                                  : "text-red-500"
+                              )}>
+                                {debugResult.status === "accepted"
+                                  ? debugResult.is_correct
+                                    ? "Accepted"
+                                    : "Wrong Answer"
+                                  : debugResult.status === "compile_error"
+                                    ? "Compile Error"
+                                    : debugResult.status === "runtime_error"
+                                      ? "Runtime Error"
+                                      : debugResult.status === "time_limit_exceeded"
+                                        ? "Time Limit Exceeded"
+                                        : debugResult.status === "memory_limit_exceeded"
+                                          ? "Memory Limit Exceeded"
+                                          : "System Error"}
+                              </span>
+                            </div>
+                            <div>
+                              运行时间：{debugResult.time_used}ms | 
+                              内存使用：{debugResult.memory_used}MB
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-4">
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium">输入数据</div>
+                              <div className={cn(
+                                "rounded-md border p-4 font-mono text-sm whitespace-pre overflow-auto",
+                                "max-h-[80px] min-h-[40px]"
+                              )}>
+                                {input}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium">程序输出</div>
+                              <div className={cn(
+                                "rounded-md border p-4 font-mono text-sm whitespace-pre overflow-auto",
+                                "max-h-[80px] min-h-[40px]",
+                                debugResult.error_message 
+                                  ? "text-red-500"
+                                  : debugResult.is_correct 
+                                    ? "text-green-500" 
+                                    : "text-yellow-500"
+                              )}>
+                                {debugResult.error_message || debugResult.output}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium">预期输出</div>
+                              <div className={cn(
+                                "rounded-md border p-4 font-mono text-sm whitespace-pre overflow-auto",
+                                "max-h-[80px] min-h-[40px]"
+                              )}>
+                                {debugResult.expected_output}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
-            )}
+            </div>
+          </div>
+          <div className="border-t p-4 flex items-center justify-end gap-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => setIsDebugOpen(!isDebugOpen)}
+            >
+              {isDebugOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
+              在线调试
+            </Button>
+            <Button
+              variant="default"
+              className="flex items-center gap-2"
+              onClick={() => {
+                // TODO: 实现提交代码功能
+                toast.info("提交代码功能开发中...")
+              }}
+            >
+              提交代码
+            </Button>
           </div>
         </div>
       </div>

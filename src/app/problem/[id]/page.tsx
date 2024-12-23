@@ -287,7 +287,7 @@ export default function ProblemDetailPage() {
           </ScrollArea>
         </div>
 
-        <CodeEditor isOpen={isEditorOpen} onOpenChange={setIsEditorOpen} />
+        <CodeEditor isOpen={isEditorOpen} onOpenChange={setIsEditorOpen} problem={problem} />
 
         <button
           onClick={() => setIsEditorOpen(!isEditorOpen)}

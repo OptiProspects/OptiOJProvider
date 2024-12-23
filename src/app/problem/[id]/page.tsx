@@ -10,6 +10,12 @@ import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github-dark.css'
+import Editor, { loader } from "@monaco-editor/react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { ChevronLeft, ChevronRight, Settings } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useTheme } from "next-themes"
+import Navbar from "@/components/Navbar"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,6 +26,31 @@ import { getProblemDetail, getCurrentDifficultySystem, type DifficultySystemResp
 import type { ProblemDetail } from "@/lib/problemService"
 import { SubmitDialog } from "@/components/submission/submit-dialog"
 import { SubmissionList } from "@/components/submission/submission-list"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { CodeEditor } from "@/components/code-editor"
+
+// 配置 Monaco Editor 的 CDN 路径
+loader.config({
+  paths: {
+    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
+  }
+})
 
 const normalDifficultyMap = {
   easy: { label: "简单", color: "success" as const },
@@ -39,11 +70,26 @@ const oiDifficultyMap = {
   unrated: { label: "暂无评级", color: "outline" as const }
 } as const
 
+// 添加一个全局样式来隐藏 Monaco Editor 的滚动条
+const monacoStyles = `
+  .monaco-editor .scrollbar {
+    background-color: hsl(var(--accent) / 0.1) !important;
+  }
+  .monaco-editor .slider {
+    background-color: hsl(var(--accent)) !important;
+    border-radius: 9999px !important;
+  }
+  .monaco-editor .slider:hover {
+    background-color: hsl(var(--accent) / 0.8) !important;
+  }
+`
+
 export default function ProblemDetailPage() {
   const params = useParams()
   const [problem, setProblem] = React.useState<ProblemDetail | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
+  const [isEditorOpen, setIsEditorOpen] = React.useState(false)
 
   React.useEffect(() => {
     const fetchProblem = async () => {
@@ -121,115 +167,138 @@ export default function ProblemDetailPage() {
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-screen-xl mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold">
-                {problem.id}. {problem.title}
-              </h1>
-              <SubmitDialog problemId={problem.id} />
-            </div>
+    <div className="h-screen flex flex-col overflow-hidden">
+      <Navbar />
+      <main className="flex-1 flex relative overflow-hidden">
+        <div className={cn(
+          "flex-1 transition-all duration-300 ease-in-out transform",
+          isEditorOpen ? "mr-[800px]" : "mr-0"
+        )}>
+          <ScrollArea className="h-full">
+            <div className="container max-w-screen-xl mx-auto px-4 py-8">
+              <div className="max-w-4xl mx-auto space-y-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-3xl font-bold">
+                      {problem.id}. {problem.title}
+                    </h1>
+                    <SubmitDialog problemId={problem.id} />
+                  </div>
 
-            <div className="flex items-center gap-4">
-              <Badge variant={difficultyInfo.color}>
-                {difficultyInfo.label}
-              </Badge>
-              <div className="text-sm text-muted-foreground">
-                时间限制: {problem.time_limit}ms
-              </div>
-              <div className="text-sm text-muted-foreground">
-                内存限制: {problem.memory_limit}MB
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {problem.categories.map((category) => (
-                <Badge key={category.id} variant="outline">
-                  {category.name}
-                </Badge>
-              ))}
-              {problem.tags.map((tag) => (
-                <Badge
-                  key={tag.id}
-                  style={{
-                    backgroundColor: tag.color,
-                    color: '#fff'
-                  }}
-                >
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          <Tabs defaultValue="description" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="description">题目描述</TabsTrigger>
-              <TabsTrigger value="solution">题解</TabsTrigger>
-              <TabsTrigger value="submissions">提交记录</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="description" className="space-y-8">
-              <MarkdownContent>{problem.description}</MarkdownContent>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">输入格式</h3>
-                <MarkdownContent>{problem.input_description}</MarkdownContent>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">输出格式</h3>
-                <MarkdownContent>{problem.output_description}</MarkdownContent>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">样例</h3>
-                {JSON.parse(problem.samples).map((sample: { input: string; output: string }, index: number) => (
-                  <div key={index} className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="font-medium">输入 #{index + 1}</div>
-                      <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
-                        {sample.input}
-                      </pre>
+                  <div className="flex items-center gap-4">
+                    <Badge variant={difficultyInfo.color}>
+                      {difficultyInfo.label}
+                    </Badge>
+                    <div className="text-sm text-muted-foreground">
+                      时间限制: {problem.time_limit}ms
                     </div>
-                    <div className="space-y-2">
-                      <div className="font-medium">输出 #{index + 1}</div>
-                      <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
-                        {sample.output}
-                      </pre>
+                    <div className="text-sm text-muted-foreground">
+                      内存限制: {problem.memory_limit}MB
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex flex-wrap gap-2">
+                    {problem.categories.map((category) => (
+                      <Badge key={category.id} variant="outline">
+                        {category.name}
+                      </Badge>
+                    ))}
+                    {problem.tags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        style={{
+                          backgroundColor: tag.color,
+                          color: '#fff'
+                        }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <Tabs defaultValue="description" className="space-y-4">
+                  <TabsList>
+                    <TabsTrigger value="description">题目描述</TabsTrigger>
+                    <TabsTrigger value="solution">题解</TabsTrigger>
+                    <TabsTrigger value="submissions">提交记录</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="description" className="space-y-8">
+                    <MarkdownContent>{problem.description}</MarkdownContent>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">输入格式</h3>
+                      <MarkdownContent>{problem.input_description}</MarkdownContent>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">输出格式</h3>
+                      <MarkdownContent>{problem.output_description}</MarkdownContent>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">样例</h3>
+                      {JSON.parse(problem.samples).map((sample: { input: string; output: string }, index: number) => (
+                        <div key={index} className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div className="font-medium">输入 #{index + 1}</div>
+                            <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
+                              {sample.input}
+                            </pre>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="font-medium">输出 #{index + 1}</div>
+                            <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
+                              {sample.output}
+                            </pre>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {problem.hint && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">提示</h3>
+                        <MarkdownContent>{problem.hint}</MarkdownContent>
+                      </div>
+                    )}
+
+                    {problem.source && (
+                      <div className="text-sm text-muted-foreground">
+                        来源：{problem.source}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="solution">
+                    题解功能开发中...
+                  </TabsContent>
+
+                  <TabsContent value="submissions">
+                    <SubmissionList problemId={problem.id} />
+                  </TabsContent>
+                </Tabs>
               </div>
-
-              {problem.hint && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">提示</h3>
-                  <MarkdownContent>{problem.hint}</MarkdownContent>
-                </div>
-              )}
-
-              {problem.source && (
-                <div className="text-sm text-muted-foreground">
-                  来源：{problem.source}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="solution">
-              题解功能开发中...
-            </TabsContent>
-
-            <TabsContent value="submissions">
-              <SubmissionList problemId={problem.id} />
-            </TabsContent>
-          </Tabs>
+            </div>
+            <ScrollBar orientation="vertical" className="z-50" />
+          </ScrollArea>
         </div>
-      </div>
+
+        <CodeEditor isOpen={isEditorOpen} onOpenChange={setIsEditorOpen} />
+
+        <button
+          onClick={() => setIsEditorOpen(!isEditorOpen)}
+          className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border-l border-y text-foreground rounded-l-md shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.3)] transition-all duration-300 ease-in-out z-50"
+          style={{
+            right: isEditorOpen ? "800px" : "0"
+          }}
+        >
+          {isEditorOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+      </main>
     </div>
   )
 } 

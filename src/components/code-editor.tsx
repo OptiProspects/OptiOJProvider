@@ -28,6 +28,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner"
 import { debugCode, DebugResult } from '@/lib/debugService'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { submitCode } from '@/lib/submissionService'
+import { useRouter } from "next/navigation"
 
 // 添加一个全局样式来自定义 Monaco Editor 的滚动条
 const monacoStyles = `
@@ -47,6 +49,7 @@ interface CodeEditorProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   problem?: {
+    id: number
     samples: string
     title: string
   }
@@ -89,6 +92,8 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
   const [samples, setSamples] = React.useState<Array<{ input: string, output: string, explanation?: string }>>([])
   const [expectedOutput, setExpectedOutput] = React.useState<string>("")
   const [activeTab, setActiveTab] = React.useState("input")
+  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   React.useEffect(() => {
     if (problem?.samples) {
@@ -278,6 +283,28 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
       // 语言支持已加载
     })
   }, [])
+
+  const handleSubmit = async () => {
+    if (!code.trim()) {
+      toast.error("请输入代码")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const response = await submitCode(problem?.id || 0, language, code)
+      if (response.code === 200) {
+        toast.success(response.message || "提交成功")
+        router.push(`/submissions/${response.data.submission_id}`)
+      } else {
+        toast.error(response.message || "提交失败")
+      }
+    } catch (error) {
+      toast.error("提交失败")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="h-full bg-background border-l">
@@ -581,12 +608,10 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
             <Button
               variant="default"
               className="flex items-center gap-2"
-              onClick={() => {
-                // TODO: 实现提交代码功能
-                toast.info("提交代码功能开发中...")
-              }}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
             >
-              提交代码
+              {isSubmitting ? "提交中..." : "提交代码"}
             </Button>
           </div>
         </div>

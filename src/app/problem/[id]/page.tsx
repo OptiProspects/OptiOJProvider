@@ -24,7 +24,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/ui/spinner"
 import { getProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { ProblemDetail } from "@/lib/problemService"
-import { SubmitDialog } from "@/components/submission/submit-dialog"
 import { SubmissionList } from "@/components/submission/submission-list"
 import {
   Select,
@@ -207,7 +206,6 @@ export default function ProblemDetailPage() {
                     <h1 className="text-3xl font-bold">
                       {problem.id}. {problem.title}
                     </h1>
-                    <SubmitDialog problemId={problem.id} />
                   </div>
 
                   <div className="flex items-center gap-4">

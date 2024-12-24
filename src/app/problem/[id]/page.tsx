@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { format } from "date-fns"
 import Markdown from "react-markdown"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
@@ -10,38 +9,18 @@ import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github-dark.css'
-import Editor, { loader } from "@monaco-editor/react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ChevronLeft, ChevronRight, Settings } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useTheme } from "next-themes"
+import { loader } from "@monaco-editor/react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import Navbar from "@/components/Navbar"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/ui/spinner"
 import { getProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { ProblemDetail } from "@/lib/problemService"
 import { SubmissionList } from "@/components/submission/submission-list"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { CodeEditor } from "@/components/code-editor"
 
 // 配置 Monaco Editor 的 CDN 路径
@@ -200,7 +179,7 @@ export default function ProblemDetailPage() {
         <div className="h-full" style={{ width: isEditorOpen ? `calc(100% - ${editorWidth}px)` : '100%' }}>
           <ScrollArea className="h-full">
             <div className="w-full px-4 py-8">
-              <div className="max-w-full space-y-8">
+              <div className="max-w-4xl mx-auto space-y-8">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">

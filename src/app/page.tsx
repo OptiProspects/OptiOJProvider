@@ -1,24 +1,38 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Calendar } from "@/components/ui/calendar";
-import { Card } from "@/components/ui/card";
-import ProblemList from "@/components/ProblemList";
+'use client'
+
+import * as React from "react"
+import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
+import ProblemList from "@/components/ProblemList"
+import { ContributionCalendar } from "@/components/ContributionCalendar"
 
 export default function Home() {
+  const [userId, setUserId] = React.useState<number | null>(null)
+
+  React.useEffect(() => {
+    const user = localStorage.getItem('user')
+    if (user) {
+      const userData = JSON.parse(user)
+      setUserId(userData.id)
+    }
+  }, [])
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow p-8">
-        <div className="flex space-x-4">
+        <div className="flex gap-8">
           <div className="flex-1">
             <ProblemList />
           </div>
-          <Card className="flex-none h-full">
-            <Calendar />
-          </Card>
+          {userId && (
+            <div className="flex-none">
+              <ContributionCalendar userId={userId} />
+            </div>
+          )}
         </div>
       </main>
       <Footer />
     </div>
-  );
+  )
 }

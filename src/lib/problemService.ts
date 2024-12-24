@@ -151,7 +151,6 @@ export const deleteTestCase = async (id: number) => {
 export interface PublicProblem {
   id: number;
   title: string;
-  description: string;
   difficulty_system: "normal" | "oi";
   difficulty: Difficulty;
   time_limit: number;
@@ -168,6 +167,10 @@ export interface PublicProblem {
     color: string;
     created_at: string;
   }>;
+  accept_count: number;
+  submission_count: number;
+  accept_rate: number;
+  user_status: 'accepted' | 'attempted' | null;
 }
 
 export interface ProblemDetail {

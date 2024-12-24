@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 import {
   Table,
@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { getPublicProblemList, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { PublicProblem } from "@/lib/problemService"
+import { CheckCircle2, Circle, XCircle } from "lucide-react"
 
 const normalDifficultyMap = {
   easy: { label: "简单", color: "success" as const },
@@ -51,6 +52,12 @@ const oiDifficultyMap = {
   provincial: { label: "省选/NOI-", color: "destructive" as const },
   noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
   unrated: { label: "暂无评级", color: "outline" as const }
+} as const
+
+const statusMap = {
+  accepted: { icon: CheckCircle2, color: "text-green-500" },
+  attempted: { icon: XCircle, color: "text-red-500" },
+  null: { icon: Circle, color: "text-muted-foreground" }
 } as const
 
 export default function ProblemList() {
@@ -168,72 +175,99 @@ export default function ProblemList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[80px] text-center">状态</TableHead>
               <TableHead className="w-[80px] text-center">ID</TableHead>
-              <TableHead className="text-center">标题</TableHead>
+              <TableHead>标题</TableHead>
               <TableHead className="w-[100px] text-center">难度</TableHead>
               <TableHead className="text-center">分类</TableHead>
               <TableHead className="text-center">标签</TableHead>
+              <TableHead className="w-[120px] text-center">提交次数</TableHead>
+              <TableHead className="w-[100px] text-center">通过率</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   <Spinner className="h-6 w-6 mx-auto" />
                 </TableCell>
               </TableRow>
             ) : problems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   暂无题目
                 </TableCell>
               </TableRow>
             ) : (
-              problems.map((problem) => (
-                <TableRow key={problem.id}>
-                  <TableCell className="text-center">#{problem.id}</TableCell>
-                  <TableCell className="text-center">
-                    <Link
-                      href={`/problem/${problem.id}`}
-                      className="hover:underline"
-                    >
-                      {problem.title}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={getDifficultyLabel(problem.difficulty).color}>
-                      {getDifficultyLabel(problem.difficulty).label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap justify-center gap-1">
-                      {problem.categories.map((category) => (
-                        <Badge
-                          key={category.id}
-                          variant="outline"
-                        >
-                          {category.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap justify-center gap-1">
-                      {problem.tags.map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          style={{
-                            backgroundColor: tag.color,
-                            color: '#fff'
-                          }}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              problems.map((problem) => {
+                const StatusIcon = statusMap[problem.user_status || 'null'].icon
+                return (
+                  <TableRow key={problem.id}>
+                    <TableCell className="text-center">
+                      <StatusIcon 
+                        className={cn(
+                          "h-5 w-5 mx-auto",
+                          statusMap[problem.user_status || 'null'].color
+                        )}
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">#{problem.id}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 text-left"
+                        onClick={() => router.push(`/problem/${problem.id}`)}
+                      >
+                        {problem.title}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={getDifficultyLabel(problem.difficulty).color}>
+                        {getDifficultyLabel(problem.difficulty).label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap justify-center gap-1">
+                        {problem.categories.map((category) => (
+                          <Badge
+                            key={category.id}
+                            variant="outline"
+                          >
+                            {category.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap justify-center gap-1">
+                        {problem.tags.map((tag) => (
+                          <Badge
+                            key={tag.id}
+                            style={{
+                              backgroundColor: tag.color,
+                              color: '#fff'
+                            }}
+                          >
+                            {tag.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="text-sm">
+                        <span className="text-green-500">{problem.accept_count}</span>
+                        {' / '}
+                        <span>{problem.submission_count}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="text-sm">
+                        {problem.accept_rate.toFixed(1)}%
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { User2, Settings, LogOut, Trophy, BookText } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiConfig";
 
 interface User {
@@ -75,70 +76,73 @@ export default function Navbar() {
         </ul>
         
         <div className="flex gap-2">
-          {!loading && (
-            user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={avatarUrl} alt={user.username} />
-                      <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    {user.username}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuLabel className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={avatarUrl} alt={user.username} />
-                      <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    {user.username}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      <User2 className="h-4 w-4" />
-                      个人资料
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/submissions" className="flex items-center gap-2">
-                      <BookText className="h-4 w-4" />
-                      我的提交
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/ranking" className="flex items-center gap-2">
-                      <Trophy className="h-4 w-4" />
-                      我的排名
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {(user.role === 'admin' || user.role === 'super_admin') && (
-                    <DropdownMenuItem>
-                      <Link href="/panel" className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        后台管理
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem className="flex items-center gap-2 text-red-600">
-                    <LogOut className="h-4 w-4" />
-                    退出登录
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Button variant="outline" asChild>
-                  <Link href="/login">登录</Link>
+          {loading ? (
+            <Button variant="ghost" className="flex items-center gap-2">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-4 w-20" />
+            </Button>
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={avatarUrl} alt={user.username} />
+                    <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  {user.username}
                 </Button>
-                <Button asChild>
-                  <Link href="/register">注册</Link>
-                </Button>
-              </>
-            )
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={avatarUrl} alt={user.username} />
+                    <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  {user.username}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Link href="/profile" className="flex items-center gap-2">
+                    <User2 className="h-4 w-4" />
+                    个人资料
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/submissions" className="flex items-center gap-2">
+                    <BookText className="h-4 w-4" />
+                    我的提交
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/ranking" className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    我的排名
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {(user.role === 'admin' || user.role === 'super_admin') && (
+                  <DropdownMenuItem>
+                    <Link href="/panel" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      后台管理
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+                  <LogOut className="h-4 w-4" />
+                  退出登录
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="outline" asChild>
+                <Link href="/login">登录</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/register">注册</Link>
+              </Button>
+            </>
           )}
         </div>
       </div>

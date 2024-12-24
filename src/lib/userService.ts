@@ -140,37 +140,6 @@ export const removeAdmin = async (userId: number) => {
   }
 };
 
-export interface ContributionData {
-  date: string;
-  submissions: number;
-  accepted: number;
-  level: number;
-}
-
-export interface ContributionsResponse {
-  total_submissions: number;
-  total_accepted: number;
-  accepted_rate: number;
-  current_streak: number;
-  longest_streak: number;
-  contributions: ContributionData[];
-}
-
-export const getUserContributions = async (userId: number, days: number = 365) => {
-  try {
-    const response = await apiClient.get<{
-      code: number;
-      data: ContributionsResponse;
-    }>(`/user/${userId}/activity`, {
-      params: { days }
-    });
-    return response.data.data;
-  } catch (error) {
-    console.error('获取用户提交热力图数据失败:', error);
-    throw error;
-  }
-};
-
 export interface ActivityData {
   date: string;
   count: number;

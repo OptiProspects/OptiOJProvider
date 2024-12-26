@@ -67,7 +67,7 @@ export default function ProblemDetailPage() {
   const [problem, setProblem] = React.useState<ProblemDetail | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
-  const [isEditorOpen, setIsEditorOpen] = React.useState(false)
+  const [isEditorOpen, setIsEditorOpen] = React.useState(true)
   const [editorWidth, setEditorWidth] = React.useState(800)
   const [isResizing, setIsResizing] = React.useState(false)
 

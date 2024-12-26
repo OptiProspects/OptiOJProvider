@@ -138,7 +138,7 @@ export default function ProblemList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">题目列表</h2>
       </div>

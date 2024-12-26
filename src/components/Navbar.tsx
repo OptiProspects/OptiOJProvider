@@ -16,6 +16,7 @@ import { User2, Settings, LogOut, Trophy, BookText } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiConfig";
+import { useRouter } from "next/navigation";
 
 interface User {
   id: number;
@@ -29,6 +30,7 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -68,11 +70,35 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 text-gray-900 p-4 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <ul className="flex space-x-4">
-          <li><Link href="/" className="hover:underline">首页</Link></li>
-          <li><Link href="/problems" className="hover:underline">题目列表</Link></li>
-          <li><Link href="/about" className="hover:underline">关于我们</Link></li>
+      <div className="container mx-auto flex justify-between items-center">
+        <ul className="flex space-x-2">
+          <li>
+            <Button
+              variant="ghost"
+              className="h-8"
+              onClick={() => router.push('/')}
+            >
+              首页
+            </Button>
+          </li>
+          <li>
+            <Button
+              variant="ghost"
+              className="h-8"
+              onClick={() => router.push('/problems')}
+            >
+              题目列表
+            </Button>
+          </li>
+          <li>
+            <Button
+              variant="ghost"
+              className="h-8"
+              onClick={() => router.push('/about')}
+            >
+              关于我们
+            </Button>
+          </li>
         </ul>
         
         <div className="flex gap-2">

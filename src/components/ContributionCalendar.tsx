@@ -16,7 +16,7 @@ const levelColors = [
 ]
 
 interface ContributionCalendarProps {
-  userId: number
+  userId: number | null
 }
 
 type ActivityDay = ActivityData & { level: number }
@@ -27,6 +27,11 @@ export function ContributionCalendar({ userId }: ContributionCalendarProps) {
 
   React.useEffect(() => {
     const fetchData = async () => {
+      if (!userId) {
+        setLoading(false)
+        return
+      }
+      
       try {
         const response = await getUserActivity(userId, 90)
         setData(response)
@@ -92,6 +97,21 @@ export function ContributionCalendar({ userId }: ContributionCalendarProps) {
           </div>
           <Separator className="mb-3" />
           <Skeleton className="h-[100px] w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!userId) {
+    return (
+      <Card className="w-[296px]">
+        <CardHeader className="p-2">
+          <CardTitle className="text-sm">90 日内数据</CardTitle>
+        </CardHeader>
+        <CardContent className="p-2">
+          <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
+            登录后即可查看提交动态
+          </div>
         </CardContent>
       </Card>
     )

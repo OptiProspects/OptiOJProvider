@@ -163,7 +163,7 @@ const GenerateUsersForm = () => {
     setIsLoading(true);
     
     try {
-      const response = await apiClient.post<GenerateResponse>("/admin/users/generate", {
+      const response = await apiClient.post<GenerateResponse>("/admin/users/generateUser", {
         prefix,
         suffix,
         count: parseInt(count),

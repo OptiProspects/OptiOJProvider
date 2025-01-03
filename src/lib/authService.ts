@@ -47,20 +47,3 @@ export const login = async (accountInfo: string, passWord: string) => {
     throw error;
   }
 };
-
-export const getUserInfo = async () => {
-  try {
-    const response = await apiClient.get<{
-      user: {
-        id: number;
-        username: string;
-        email: string;
-        phone: string;
-      }
-    }>('/user/globalData');
-    return response.data.user;
-  } catch (error) {
-    console.error('获取用户信息失败:', error);
-    throw error;
-  }
-};

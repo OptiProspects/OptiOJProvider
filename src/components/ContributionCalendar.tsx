@@ -52,15 +52,17 @@ export function ContributionCalendar({ userId }: ContributionCalendarProps) {
     const days: ActivityDay[] = Array(90).fill({ level: 0, count: 0, date: '' })
     const now = new Date()
     
-    data.activities.forEach(activity => {
-      const date = new Date(activity.date)
-      const diffTime = Math.abs(now.getTime() - date.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      
-      if (diffDays <= 90) {
-        days[90 - diffDays] = activity
-      }
-    })
+    if (data.activities && data.activities.length > 0) {
+      data.activities.forEach(activity => {
+        const date = new Date(activity.date)
+        const diffTime = Math.abs(now.getTime() - date.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        
+        if (diffDays <= 90) {
+          days[90 - diffDays] = activity
+        }
+      })
+    }
 
     return days
   }, [data])

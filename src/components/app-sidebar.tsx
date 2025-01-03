@@ -143,8 +143,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       try {
         // 获取用户基本信息
         const userData = await getUserData()
+        
         // 获取头像
-        const { avatarUrl } = await getAvatar()
+        let avatarUrl = ''
+        if (userData.user.avatar) {
+          const response = await getAvatar(userData.user.avatar)
+          avatarUrl = response.avatarUrl
+        }
         
         setUser({
           name: userData.user.username,

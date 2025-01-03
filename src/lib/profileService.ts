@@ -42,10 +42,11 @@ export const updateProfile = async (data: {
   }
 };
 
-export const getAvatar = async () => {
+export const getAvatar = async (filename?: string) => {
   try {
     const response = await apiClient.get('/user/getAvatar', {
-      responseType: 'blob'
+      responseType: 'blob',
+      params: filename ? { filename } : undefined
     });
     const avatarUrl = URL.createObjectURL(response.data);
     return { avatarUrl };
@@ -120,6 +121,25 @@ export const getCities = async (province: string) => {
     return response.data.cities;
   } catch (error) {
     console.error('获取城市列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取用户头像URL
+export const getUserAvatarUrl = (avatar: string | null | undefined) => {
+  if (!avatar) return '';
+  return `${process.env.NEXT_PUBLIC_API_ENDPOINT}/user/getAvatar?avatar=${avatar}`;
+};
+
+// 获取当前用户头像
+export const getCurrentUserAvatar = async () => {
+  try {
+    const response = await apiClient.get('/user/getAvatar', {
+      responseType: 'blob'
+    });
+    return URL.createObjectURL(response.data);
+  } catch (error) {
+    console.error('获取头像失败:', error);
     throw error;
   }
 };

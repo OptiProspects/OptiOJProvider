@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -69,6 +70,9 @@ export function SubmitDialog({ problemId, trigger }: SubmitDialogProps) {
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>提交代码</DialogTitle>
+          <DialogDescription>
+            选择编程语言并提交你的代码。
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Select value={language} onValueChange={setLanguage}>

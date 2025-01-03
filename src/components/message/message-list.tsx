@@ -185,7 +185,12 @@ export function MessageList({ defaultType }: MessageListProps) {
   const handleMarkAllAsRead = async () => {
     try {
       await markAllMessagesAsRead();
-      setMessages(messages.map(msg => ({ ...msg, is_read: true })));
+      setMessages(messages.map(msg => ({
+        ...msg,
+        is_read: true,
+        read_at: new Date().toISOString(),
+        actions: msg.actions?.filter(a => a.action !== 'mark_read')
+      })));
       setUnreadCount(0);
       toast.success('已全部标记为已读');
     } catch (error) {

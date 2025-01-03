@@ -50,7 +50,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { updateProblem, type ProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
+import { adminUpdateProblem, type ProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
 
@@ -195,7 +195,7 @@ export function EditProblemDialog({
         }
         data.samples = JSON.stringify(validSamples)
       }
-      await updateProblem(problem.id, data)
+      await adminUpdateProblem(problem.id, data)
       toast.success("更新成功")
       onOpenChange(false)
       onSuccess?.()

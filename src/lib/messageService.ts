@@ -85,19 +85,6 @@ export const getMessageList = async (params: {
   }
 };
 
-export const performMessageAction = async (messageId: number, action: string, reason?: string) => {
-  try {
-    const response = await apiClient.post(`/messages/${messageId}/action`, {
-      action,
-      reason
-    });
-    return response.data;
-  } catch (error) {
-    console.error('执行消息操作失败:', error);
-    throw error;
-  }
-};
-
 export const markAllMessagesAsRead = async (type?: keyof MessageType) => {
   try {
     const response = await apiClient.put('/messages/readAll', { type });

@@ -52,7 +52,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Spinner } from "@/components/ui/spinner"
-import { getProblemList, deleteProblem, getProblemDetail, switchDifficultySystem, getCurrentDifficultySystem, type DifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
+import { adminGetProblemList, adminGetProblemDetail, adminUpdateProblem, deleteProblem, switchDifficultySystem, getCurrentDifficultySystem, type DifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { Problem, ProblemDetail } from "@/lib/problemService"
 import { CreateProblemDialog } from "./create-dialog"
 import { EditProblemDialog } from "./edit-dialog"
@@ -104,16 +104,15 @@ export default function ProblemPage() {
   const fetchData = React.useCallback(async () => {
     setLoading(true)
     try {
-      const result = await getProblemList({
+      const result = await adminGetProblemList({
         page,
         page_size: pageSize,
         title: searchTitle || undefined,
         difficulty: difficulty !== "all" ? difficulty : undefined,
-        is_public: isPublic !== "all" ? isPublic === "public" : undefined
       });
       
       setData(result.problems || [])
-      setTotal(result.total)
+      setTotal(result.total_count)
     } catch (error: any) {
       toast.error("加载失败", {
         description: error.message || "获取题目列表时发生错误",
@@ -121,7 +120,7 @@ export default function ProblemPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, searchTitle, difficulty, isPublic])
+  }, [page, pageSize, searchTitle, difficulty])
 
   React.useEffect(() => {
     fetchData()
@@ -270,27 +269,25 @@ export default function ProblemPage() {
       },
     },
     {
-      accessorKey: "is_public",
-      header: () => <div className="text-center font-medium">状态</div>,
+      accessorKey: "accept_rate",
+      header: () => <div className="text-center font-medium">通过率</div>,
       cell: ({ row }) => {
-        const isPublic = row.getValue("is_public") as boolean
+        const acceptRate = row.getValue("accept_rate") as number
+        const acceptCount = row.original.accept_count
+        const submissionCount = row.original.submission_count
         return (
           <div className="text-center">
-            <Badge variant={isPublic ? "success" : "secondary"}>
-              {isPublic ? "公开" : "私有"}
-            </Badge>
+            <div className="text-sm">
+              <span className="text-green-500">{acceptCount}</span>
+              {' / '}
+              <span>{submissionCount}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {acceptRate.toFixed(1)}%
+            </div>
           </div>
         )
       },
-    },
-    {
-      accessorKey: "created_at",
-      header: () => <div className="text-center font-medium">创建时间</div>,
-      cell: ({ row }) => (
-        <div className="text-center">
-          {format(new Date(row.getValue("created_at")), "yyyy-MM-dd HH:mm:ss")}
-        </div>
-      ),
     },
     {
       id: "actions",
@@ -311,8 +308,8 @@ export default function ProblemPage() {
                 <DropdownMenuItem
                   onClick={async () => {
                     try {
-                      const problemDetail = await getProblemDetail(problem.id)
-                      setSelectedProblem(problemDetail)
+                      const problemDetail = await adminGetProblemDetail(problem.id)
+                      setSelectedProblem(problemDetail.problem)
                       setEditDialogOpen(true)
                     } catch (error: any) {
                       toast.error("获取题目详情失败", {

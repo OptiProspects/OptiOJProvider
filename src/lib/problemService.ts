@@ -18,6 +18,10 @@ export interface Problem {
     color: string;
     created_at: string;
   }>;
+  accept_count: number;
+  submission_count: number;
+  accept_rate: number;
+  user_status: 'accepted' | 'attempted' | null;
 }
 
 export interface ProblemListResponse {
@@ -327,6 +331,66 @@ export const switchDifficultySystem = async (system: DifficultySystem) => {
     return response.data;
   } catch (error) {
     console.error('切换难度系统失败:', error);
+    throw error;
+  }
+};
+
+// 添加管理员接口
+export const adminGetProblemList = async (params: {
+  page: number;
+  page_size: number;
+  title?: string;
+  difficulty?: string;
+  category_id?: number;
+  tag_ids?: number[];
+}) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: {
+        problems: Problem[];
+        total_count: number;
+        current_page: number;
+        page_size: number;
+      };
+    }>('/admin/problems', { params });
+    return response.data.data;
+  } catch (error) {
+    console.error('获取题目列表失败:', error);
+    throw error;
+  }
+};
+
+export const adminGetProblemDetail = async (id: number) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: {
+        problem: ProblemDetail;
+        admin_info: {
+          created_by_user: {
+            id: number;
+            username: string;
+            email: string;
+            phone: string;
+          };
+          test_cases: TestCase[];
+        };
+      };
+    }>(`/admin/problems/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('获取题目详情失败:', error);
+    throw error;
+  }
+};
+
+export const adminUpdateProblem = async (id: number, data: UpdateProblemData) => {
+  try {
+    const response = await apiClient.put(`/admin/problems/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('更新题目失败:', error);
     throw error;
   }
 }; 

@@ -69,7 +69,7 @@ const formatDate = (dateString: string) => {
   return format(date, "yyyy-MM-dd HH:mm:ss");
 };
 
-export const columns = (fetchData: () => Promise<void>): ColumnDef<User>[] => [
+const getColumns = (fetchData: () => Promise<void>): ColumnDef<User>[] => [
   {
     accessorKey: "id",
     header: ({ column }) => {
@@ -392,9 +392,14 @@ export default function UsersPage() {
     fetchData()
   }, [fetchData])
 
+  const columns = React.useMemo(
+    () => getColumns(fetchData),
+    [fetchData]
+  );
+
   const table = useReactTable({
     data,
-    columns: columns(fetchData),
+    columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -424,7 +429,7 @@ export default function UsersPage() {
       searchColumn="username"
       searchPlaceholder="搜索用户名..."
       table={table}
-      columns={columns(fetchData)}
+      columns={columns}
       loading={loading}
       page={page}
       pageSize={pageSize}

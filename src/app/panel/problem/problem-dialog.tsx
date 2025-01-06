@@ -56,7 +56,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { createProblem, updateProblem, type Problem } from "@/lib/problemService"
+import { createProblem, updateProblem, type ProblemDetail, type Difficulty, type NormalDifficulty, type OIDifficulty } from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
 
@@ -75,7 +75,7 @@ const formSchema = z.object({
   }),
   hint: z.string().optional(),
   source: z.string().optional(),
-  difficulty: z.enum(["easy", "medium", "hard"]),
+  difficulty: z.enum(["easy", "medium", "hard", "unrated", "beginner", "basic", "basicplus", "advanced", "advplus", "provincial", "noi"] as const),
   time_limit: z.number().min(100).max(10000),
   memory_limit: z.number().min(16).max(1024),
   is_public: z.boolean(),
@@ -89,7 +89,7 @@ interface ProblemDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
-  problem?: Problem
+  problem?: ProblemDetail
 }
 
 const editorStyles = {
@@ -344,6 +344,14 @@ export function ProblemDialog({
                             <SelectItem value="easy">简单</SelectItem>
                             <SelectItem value="medium">中等</SelectItem>
                             <SelectItem value="hard">困难</SelectItem>
+                            <SelectItem value="unrated">未评级</SelectItem>
+                            <SelectItem value="beginner">入门</SelectItem>
+                            <SelectItem value="basic">基础</SelectItem>
+                            <SelectItem value="basicplus">提高</SelectItem>
+                            <SelectItem value="advanced">高级</SelectItem>
+                            <SelectItem value="advplus">高级+</SelectItem>
+                            <SelectItem value="provincial">省选</SelectItem>
+                            <SelectItem value="noi">NOI</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

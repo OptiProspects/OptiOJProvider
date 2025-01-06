@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from "react"
+import { Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -60,7 +61,7 @@ const statusMap = {
   null: { icon: Circle, color: "text-muted-foreground" }
 } as const
 
-export default function ProblemList() {
+function ProblemListContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -318,5 +319,42 @@ export default function ProblemList() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ProblemList() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-4 px-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold tracking-tight">题目列表</h2>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px] text-center">状态</TableHead>
+                <TableHead className="w-[80px] text-center">ID</TableHead>
+                <TableHead>标题</TableHead>
+                <TableHead className="w-[100px] text-center">难度</TableHead>
+                <TableHead className="text-center">分类</TableHead>
+                <TableHead className="text-center">标签</TableHead>
+                <TableHead className="w-[120px] text-center">提交次数</TableHead>
+                <TableHead className="w-[100px] text-center">通过率</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <Spinner className="h-6 w-6 mx-auto" />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    }>
+      <ProblemListContent />
+    </Suspense>
   )
 } 

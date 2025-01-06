@@ -1,9 +1,5 @@
 import apiClient from '@/config/apiConfig';
 
-export type NormalDifficulty = "easy" | "medium" | "hard" | "unrated";
-export type OIDifficulty = "beginner" | "basic" | "basicplus" | "advanced" | "advplus" | "provincial" | "noi" | "unrated";
-export type Difficulty = NormalDifficulty | OIDifficulty;
-
 export interface Problem {
   id: number;
   title: string;
@@ -290,6 +286,11 @@ export const updateProblem = async (id: number, data: UpdateProblemData) => {
 
 // 添加难度系统类型
 export type DifficultySystem = "normal" | "oi"
+
+// 添加难度等级类型
+export type NormalDifficulty = "easy" | "medium" | "hard" | "unrated"
+export type OIDifficulty = "beginner" | "basic" | "basicplus" | "advanced" | "advplus" | "provincial" | "noi" | "unrated"
+export type Difficulty = NormalDifficulty | OIDifficulty
 
 export interface DifficultyInfo {
   code: string;

@@ -47,4 +47,3 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NEXT_PUBLIC_API_ENDPOINT=${{ secrets.PROD_API_ENDPOINT }}
-            NEXT_PUBLIC_GIT_SHA=${{ github.sha }}

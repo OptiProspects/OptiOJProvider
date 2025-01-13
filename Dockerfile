@@ -1,8 +1,5 @@
 FROM node:20.10.0-alpine AS builder
 
-ARG NEXT_PUBLIC_GIT_SHA
-ENV NEXT_PUBLIC_GIT_SHA=$NEXT_PUBLIC_GIT_SHA
-
 WORKDIR /app
 
 RUN apk add --no-cache python3 make g++

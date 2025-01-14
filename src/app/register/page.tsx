@@ -109,8 +109,23 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     try {
-      if (!username || !password || !verificationCode) {
-        toast.error('请填写所有必填字段');
+      if (!username || !password) {
+        toast.error('请填写用户名和密码');
+        return;
+      }
+
+      if (activeTab === 'email' && !email) {
+        toast.error('请填写邮箱地址');
+        return;
+      }
+
+      if (activeTab === 'phone' && !phone) {
+        toast.error('请填写手机号');
+        return;
+      }
+
+      if (!verificationCode) {
+        toast.error('请填写验证码');
         return;
       }
 
@@ -223,7 +238,7 @@ export default function RegisterPage() {
                   isPasswordFocused ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
                 }`}>
                   <p className={`${passwordStrength.isStrong ? 'text-green-500' : 'text-red-500'}`}>
-                    {passwordStrength.isStrong ? '恭喜，您的密码强度符合要求 u( •̀ ω •́ )y' : '您的密码强度不足，请��保满足以下条件中的任意两项：'}
+                    {passwordStrength.isStrong ? '恭喜，您的密码强度符合要求 u( •̀ ω •́ )y' : '您的密码强度不足，请确保满足以下条件中的任意两项：'}
                   </p>
                   <div className="text-gray-500 text-xs">
                     满足以下条件中的任意两项：

@@ -1,7 +1,22 @@
 import axios from 'axios';
 
+declare global {
+  interface Window {
+    __RUNTIME_CONFIG__?: {
+      NEXT_PUBLIC_API_ENDPOINT: string;
+    };
+  }
+}
+
+const getApiEndpoint = () => {
+  if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_ENDPOINT) {
+    return window.__RUNTIME_CONFIG__.NEXT_PUBLIC_API_ENDPOINT;
+  }
+  return process.env.NEXT_PUBLIC_API_ENDPOINT;
+};
+
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_ENDPOINT,
+  baseURL: getApiEndpoint(),
   headers: {
     'Content-Type': 'application/json',
   },

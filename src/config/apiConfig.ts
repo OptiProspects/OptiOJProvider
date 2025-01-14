@@ -9,10 +9,12 @@ declare global {
 }
 
 export const getApiEndpoint = () => {
-  if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_ENDPOINT) {
-    return window.__RUNTIME_CONFIG__.NEXT_PUBLIC_API_ENDPOINT;
+  // dev
+  if (typeof window === 'undefined' || process.env.NODE_ENV === 'development') {
+    return process.env.NEXT_PUBLIC_API_ENDPOINT;
   }
-  return process.env.NEXT_PUBLIC_API_ENDPOINT;
+  // prod
+  return window.__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_ENDPOINT || process.env.NEXT_PUBLIC_API_ENDPOINT;
 };
 
 const apiClient = axios.create({

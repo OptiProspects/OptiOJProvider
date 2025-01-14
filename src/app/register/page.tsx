@@ -24,8 +24,10 @@ import { toast } from "sonner";
 import { sendVerificationCode } from "@/lib/captchaService";
 import { register } from "@/lib/authService";
 import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const captchaRef = React.useRef(null);
   const [activeTab, setActiveTab] = React.useState('email');
   const [email, setEmail] = useState('');
@@ -157,6 +159,7 @@ export default function RegisterPage() {
 
       const response = await register(registrationData);
       toast.success('注册成功，欢迎来到 OptiOJ ！ ヾ(≧▽≦*)o');
+      router.push('/');
     } catch (error) {
       console.error('Registration error:', error);
       const errorMessage = (error as any)?.response?.data?.error || '注册失败，请重试';
@@ -305,7 +308,14 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="captcha">验证码</Label>
-                <Input id="captcha" type="text" placeholder="请输入验证码" className="flex-1" />
+                <Input 
+                  id="captcha" 
+                  type="text" 
+                  placeholder="请输入验证码" 
+                  className="flex-1"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="password-phone">密码</Label>

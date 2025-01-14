@@ -1,4 +1,5 @@
 import apiClient from '@/config/apiConfig';
+import { getApiEndpoint } from '@/config/apiConfig';
 
 export const uploadAvatar = async (file: File) => {
   const formData = new FormData();
@@ -128,7 +129,7 @@ export const getCities = async (province: string) => {
 // 获取用户头像URL
 export const getUserAvatarUrl = (avatar: string | null | undefined) => {
   if (!avatar) return '';
-  return `${process.env.NEXT_PUBLIC_API_ENDPOINT}/user/getAvatar?avatar=${avatar}`;
+  return `${getApiEndpoint()}/user/getAvatar?avatar=${avatar}`;
 };
 
 // 获取当前用户头像
@@ -142,4 +143,8 @@ export const getCurrentUserAvatar = async () => {
     console.error('获取头像失败:', error);
     throw error;
   }
+};
+
+export const getAvatarUrl = (avatar: string) => {
+  return `${getApiEndpoint()}/user/getAvatar?avatar=${avatar}`;
 };

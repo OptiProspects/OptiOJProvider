@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-const getApiEndpoint = () => {
+export const getApiEndpoint = () => {
   if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_ENDPOINT) {
     return window.__RUNTIME_CONFIG__.NEXT_PUBLIC_API_ENDPOINT;
   }
@@ -55,9 +55,9 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token available');
         }
 
-        // 尝试刷新 token
+        // 尝试刷新 token，使用 getApiEndpoint() 替代直接使用环境变量
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/refreshToken`,
+          `${getApiEndpoint()}/auth/refreshToken`,
           {
             headers: {
               'Authorization': refreshToken

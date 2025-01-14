@@ -1,4 +1,5 @@
 import apiClient from '@/config/apiConfig';
+import { getApiEndpoint } from '@/config/apiConfig';
 
 // 团队成员接口
 export interface TeamMember {
@@ -222,7 +223,7 @@ export const deleteTeamAvatar = async (teamId: number) => {
 export const getTeamAvatarUrl = (team: TeamDetail | { id: number, avatar: string }) => {
   // 如果团队有头像，返回头像URL
   if (team.avatar) {
-    return `${process.env.NEXT_PUBLIC_API_ENDPOINT}/teams/avatar/${team.avatar}`;
+    return `${getApiEndpoint()}/teams/avatar/${team.avatar}`;
   }
   // 如果没有头像，返回空字符串
   return '';

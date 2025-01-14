@@ -38,7 +38,7 @@ import {
 import type { TeamDetail, TeamMember } from "@/lib/teamService"
 import { TeamInviteDialog } from "@/components/team/team-invite-dialog"
 import { TeamSettingsDialog } from "@/components/team/team-settings-dialog"
-import { getAvatar } from "@/lib/profileService"
+import { getApiEndpoint } from '@/config/apiConfig';
 
 export default function TeamDetailPage() {
   const router = useRouter()
@@ -94,7 +94,7 @@ export default function TeamDetailPage() {
     const avatars: Record<number, string> = {}
     members.forEach((member) => {
       if (member.avatar) {
-        avatars[member.user_id] = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/user/getAvatar?filename=${member.avatar}`
+        avatars[member.user_id] = `${getApiEndpoint()}/user/getAvatar?filename=${member.avatar}`
       }
     })
     setMemberAvatars(avatars)

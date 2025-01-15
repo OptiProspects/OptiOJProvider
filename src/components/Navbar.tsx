@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User2, Settings, LogOut, Trophy, BookText, Users, Bell } from "lucide-react";
+import { User2, Settings, LogOut, Trophy, BookText, Users, Bell, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiConfig";
@@ -19,7 +19,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { getAvatar } from "@/lib/profileService";
 import { getUnreadCount } from '@/lib/messageService';
 import { Badge } from "@/components/ui/badge";
-import { logout } from "@/lib/sessionService";
+import { logoutService } from "@/lib/sessionService";
 import { toast } from 'sonner';
 
 interface User {
@@ -86,7 +86,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await logoutService();
       toast.success('成功退出登录');
       if (pathname === '/') {
         window.location.reload();
@@ -200,6 +200,12 @@ export default function Navbar() {
                     <Link href="/ranking" className="flex items-center gap-2">
                       <Trophy className="h-4 w-4" />
                       我的排名
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/account-security" className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" />
+                      账号安全
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

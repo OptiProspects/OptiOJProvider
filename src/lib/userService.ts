@@ -167,4 +167,4 @@ export const getUserActivity = async (userId: number, days: number = 30) => {
     console.error('获取用户活动数据失败:', error);
     throw error;
   }
-}; 
+};

@@ -19,6 +19,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { getAvatar } from "@/lib/profileService";
 import { getUnreadCount } from '@/lib/messageService';
 import { Badge } from "@/components/ui/badge";
+import { logout } from "@/lib/sessionService";
+import { toast } from 'sonner';
 
 interface User {
   id: number;
@@ -81,6 +83,21 @@ export default function Navbar() {
       };
     }
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('成功退出登录');
+      if (pathname === '/') {
+        window.location.reload();
+      } else {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('退出登录失败:', error);
+      toast.error('退出登录失败');
+    }
+  };
 
   return (
     <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 text-gray-900 p-4 sticky top-0 z-50">
@@ -194,7 +211,10 @@ export default function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-red-600 cursor-pointer" 
+                    onClick={handleLogout}
+                  >
                     <LogOut className="h-4 w-4" />
                     退出登录
                   </DropdownMenuItem>

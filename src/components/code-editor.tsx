@@ -434,7 +434,7 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
                 suggest: {
                   localityBonus: true,
                   showIcons: true,
-                  maxVisibleSuggestions: 12,
+                  // maxVisibleSuggestions: 12,
                   selectionMode: 'always',
                   snippetsPreventQuickSuggestions: false
                 },

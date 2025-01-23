@@ -96,75 +96,75 @@ export default function TeamsPage() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
-        <div className="container mx-auto py-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">团队</h1>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8 max-w-[1200px]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2">
+            <h1 className="text-xl sm:text-2xl font-bold">团队</h1>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               创建团队
             </Button>
           </div>
 
-          <Tabs defaultValue="teams" className="w-full" onValueChange={(value) => setShowAllTeams(value === 'all-teams')}>
-            <TabsList>
-              <TabsTrigger value="teams">我加入的团队</TabsTrigger>
-              <TabsTrigger value="all-teams">所有团队</TabsTrigger>
+          <Tabs defaultValue="teams" className="w-full px-2" onValueChange={(value) => setShowAllTeams(value === 'all-teams')}>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="teams" className="flex-1 sm:flex-none">我加入的团队</TabsTrigger>
+              <TabsTrigger value="all-teams" className="flex-1 sm:flex-none">所有团队</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 px-2">
+            <div className="relative flex-1 max-w-full sm:max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="搜索团队..."
                 value={keyword}
                 onChange={handleSearch}
-                className="pl-8"
+                className="pl-8 w-full"
               />
             </div>
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-48 sm:h-64">
               <Spinner className="h-8 w-8" />
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto bg-card">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>团队名称</TableHead>
-                    <TableHead>成员数量</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead>我的角色</TableHead>
+                    <TableHead className="min-w-[200px]">团队名称</TableHead>
+                    <TableHead className="min-w-[100px]">成员数量</TableHead>
+                    <TableHead className="min-w-[150px]">创建时间</TableHead>
+                    <TableHead className="min-w-[120px]">我的角色</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {teams.map((team) => (
                     <TableRow
                       key={team.id}
-                      className="cursor-pointer"
+                      className="cursor-pointer hover:bg-muted/50"
                       onClick={() => router.push(`/teams/${team.id}`)}
                     >
                       <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                          <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
                             <AvatarImage 
                               src={getTeamAvatarUrl(team)} 
                               alt={team.name}
                             />
                             <AvatarFallback>
                               {getTeamAvatarUrl(team) ? (
-                                <Skeleton className="h-10 w-10 rounded-full animate-pulse" />
+                                <Skeleton className="h-full w-full rounded-full animate-pulse" />
                               ) : (
                                 team.name.slice(0, 2).toUpperCase()
                               )}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
+                          <div className="space-y-1">
                             <div className="font-medium">{team.name}</div>
                             {team.description && (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm text-muted-foreground line-clamp-2">
                                 {team.description}
                               </div>
                             )}

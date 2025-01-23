@@ -101,7 +101,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 text-gray-900 p-4 sticky top-0 z-50">
-      <div className="container mx-auto flex justify-between items-center">
+      <div className="container max-w-7xl mx-auto flex justify-between items-center">
         <ul className="flex space-x-2">
           <li>
             <Button

@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
+import apiClient from "@/config/apiConfig"
 
 import {
   Table,
@@ -61,7 +62,21 @@ const statusMap = {
   null: { icon: Circle, color: "text-muted-foreground" }
 } as const
 
-function ProblemListContent() {
+interface ProblemTag {
+  id: number;
+  name: string;
+  color: string;
+  description: string;
+}
+
+interface TagListResponse {
+  tags: ProblemTag[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+function ProblemListContent({ showFilters = false }: { showFilters?: boolean }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -69,11 +84,38 @@ function ProblemListContent() {
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
+  const [tags, setTags] = React.useState<ProblemTag[]>([])
   
   const page = Number(searchParams.get("page")) || 1
   const searchTitle = searchParams.get("title") || ""
   const difficulty = searchParams.get("difficulty") || "all"
+  const selectedTagsStr = searchParams.get("tags") || ""
+  const selectedTags = React.useMemo(() => 
+    selectedTagsStr ? selectedTagsStr.split(",").filter(Boolean) : []
+  , [selectedTagsStr])
   
+  const fetchTags = React.useCallback(async () => {
+    try {
+      const response = await apiClient.get<{ code: number; data: TagListResponse }>("/tags/getTagList", {
+        params: {
+          page: 1,
+          page_size: 100,
+        }
+      });
+      if (response.data.code === 200) {
+        setTags(response.data.data.tags);
+      }
+    } catch (error) {
+      console.error("获取标签列表失败:", error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (showFilters) {
+      fetchTags();
+    }
+  }, [showFilters, fetchTags]);
+
   const fetchProblems = React.useCallback(async () => {
     setLoading(true)
     try {
@@ -82,6 +124,7 @@ function ProblemListContent() {
         page_size: 20,
         title: searchTitle || undefined,
         difficulty: difficulty !== "all" ? difficulty : undefined,
+        tag_ids: selectedTags.length > 0 ? selectedTags.map(Number) : undefined,
       })
       setProblems(result.problems || [])
       setTotal(result.total)
@@ -90,7 +133,7 @@ function ProblemListContent() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTitle, difficulty])
+  }, [page, searchTitle, difficulty, selectedTagsStr])
 
   React.useEffect(() => {
     fetchProblems()
@@ -115,7 +158,7 @@ function ProblemListContent() {
         params.delete(key)
       }
     })
-    router.push(`/?${params.toString()}`)
+    router.push(`/problems?${params.toString()}`)
   }
 
   const totalPages = Math.ceil(total / 20)
@@ -139,38 +182,68 @@ function ProblemListContent() {
   }
 
   return (
-    <div className="space-y-4 px-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">题目列表</h2>
-      </div>
+    <div className="space-y-4">
+      {showFilters && (
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">难度：</span>
+            <Select
+              value={difficulty}
+              onValueChange={(value) => updateSearchParams({ difficulty: value, page: "1" })}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="难度" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部难度</SelectItem>
+                {difficultySystem && difficultySystem.systems
+                  .find(sys => sys.system === difficultySystem.current_system)
+                  ?.difficulties.map(diff => (
+                    <SelectItem key={diff.code} value={diff.code}>
+                      {diff.display}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div className="flex items-center gap-4">
-        <Input
-          placeholder="搜索题目..."
-          value={searchTitle}
-          onChange={(e) => updateSearchParams({ title: e.target.value, page: "1" })}
-          className="max-w-sm"
-        />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">标签：</span>
+            <Select
+              value={selectedTags.join(",") || "all"}
+              onValueChange={(value) => updateSearchParams({ tags: value === "all" ? "" : value, page: "1" })}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="选择标签" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部标签</SelectItem>
+                {tags.map(tag => (
+                  <SelectItem key={tag.id} value={String(tag.id)}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <Select
-          value={difficulty}
-          onValueChange={(value) => updateSearchParams({ difficulty: value, page: "1" })}
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="难度" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部难度</SelectItem>
-            {difficultySystem && difficultySystem.systems
-              .find(sys => sys.system === difficultySystem.current_system)
-              ?.difficulties.map(diff => (
-                <SelectItem key={diff.code} value={diff.code}>
-                  {diff.display}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">搜索：</span>
+            <Input
+              placeholder="搜索题目..."
+              value={searchTitle}
+              onChange={(e) => updateSearchParams({ title: e.target.value, page: "1" })}
+              className="max-w-sm"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="rounded-md border">
         <Table>
@@ -322,10 +395,17 @@ function ProblemListContent() {
   )
 }
 
-export default function ProblemList() {
+export default function ProblemList({ showFilters = false }: { showFilters?: boolean }) {
   return (
     <Suspense fallback={
-      <div className="space-y-4 px-4">
+      <div className="space-y-4">
+        {showFilters && (
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="h-10 w-[120px] bg-gray-100 animate-pulse rounded-md" />
+            <div className="h-10 w-[150px] bg-gray-100 animate-pulse rounded-md" />
+            <div className="h-10 w-[200px] bg-gray-100 animate-pulse rounded-md" />
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold tracking-tight">题目列表</h2>
         </div>
@@ -354,7 +434,7 @@ export default function ProblemList() {
         </div>
       </div>
     }>
-      <ProblemListContent />
+      <ProblemListContent showFilters={showFilters} />
     </Suspense>
   )
 } 

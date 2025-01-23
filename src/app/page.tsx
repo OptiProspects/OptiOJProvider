@@ -20,12 +20,12 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow container max-w-7xl mx-auto py-8">
-        <div className="flex gap-8">
-          <div className="flex-1">
+      <main className="flex-grow container max-w-7xl mx-auto py-8 px-4">
+        <div className="flex">
+          <div className="w-[calc(100%-320px)]">
             <ProblemList />
           </div>
-          <div className="flex-none pr-6">
+          <div className="w-[300px] pl-8">
             <ContributionCalendar userId={userId} />
           </div>
         </div>

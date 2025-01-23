@@ -37,6 +37,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { getPublicProblemList, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { PublicProblem } from "@/lib/problemService"
 import { CheckCircle2, Circle, XCircle } from "lucide-react"
+import { TagFilterDialog } from "@/components/tag-filter-dialog"
+import { Tag } from "@/lib/tagService"
 
 const normalDifficultyMap = {
   easy: { label: "简单", color: "success" as const },
@@ -62,11 +64,8 @@ const statusMap = {
   null: { icon: Circle, color: "text-muted-foreground" }
 } as const
 
-interface ProblemTag {
-  id: number;
-  name: string;
-  color: string;
-  description: string;
+interface ProblemTag extends Tag {
+  // 保留原有的 ProblemTag 特定字段
 }
 
 interface TagListResponse {
@@ -184,63 +183,73 @@ function ProblemListContent({ showFilters = false }: { showFilters?: boolean }) 
   return (
     <div className="space-y-4">
       {showFilters && (
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">难度：</span>
-            <Select
-              value={difficulty}
-              onValueChange={(value) => updateSearchParams({ difficulty: value, page: "1" })}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="难度" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部难度</SelectItem>
-                {difficultySystem && difficultySystem.systems
-                  .find(sys => sys.system === difficultySystem.current_system)
-                  ?.difficulties.map(diff => (
-                    <SelectItem key={diff.code} value={diff.code}>
-                      {diff.display}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">难度：</span>
+              <Select
+                value={difficulty}
+                onValueChange={(value) => updateSearchParams({ difficulty: value, page: "1" })}
+              >
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="难度" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部难度</SelectItem>
+                  {difficultySystem && difficultySystem.systems
+                    .find(sys => sys.system === difficultySystem.current_system)
+                    ?.difficulties.map(diff => (
+                      <SelectItem key={diff.code} value={diff.code}>
+                        {diff.display}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">搜索：</span>
+              <Input
+                placeholder="搜索题目..."
+                value={searchTitle}
+                onChange={(e) => updateSearchParams({ title: e.target.value, page: "1" })}
+                className="max-w-sm"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">标签：</span>
-            <Select
-              value={selectedTags.join(",") || "all"}
-              onValueChange={(value) => updateSearchParams({ tags: value === "all" ? "" : value, page: "1" })}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="选择标签" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部标签</SelectItem>
-                {tags.map(tag => (
-                  <SelectItem key={tag.id} value={String(tag.id)}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: tag.color }}
-                      />
-                      {tag.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">搜索：</span>
-            <Input
-              placeholder="搜索题目..."
-              value={searchTitle}
-              onChange={(e) => updateSearchParams({ title: e.target.value, page: "1" })}
-              className="max-w-sm"
+          <div className="flex flex-wrap items-center gap-4">
+            <TagFilterDialog
+              selectedTags={selectedTags}
+              onTagsChange={(tags) => updateSearchParams({ tags: tags.join(","), page: "1" })}
+              tags={tags}
             />
+            
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedTags.map(tagId => {
+                  const tag = tags.find(t => String(t.id) === tagId)
+                  if (!tag) return null
+                  return (
+                    <Badge
+                      key={tag.id}
+                      className="cursor-pointer gap-1.5"
+                      style={{
+                        backgroundColor: tag.color,
+                        color: '#fff'
+                      }}
+                      onClick={() => {
+                        const newTags = selectedTags.filter(id => id !== String(tag.id))
+                        updateSearchParams({ tags: newTags.join(","), page: "1" })
+                      }}
+                    >
+                      {tag.name}
+                      <XCircle className="h-3 w-3" />
+                    </Badge>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

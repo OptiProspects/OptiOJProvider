@@ -124,6 +124,15 @@ export default function Navbar() {
           <li>
             <Button
               variant="ghost"
+              className={`h-8 ${pathname === '/teams' ? 'bg-accent' : ''}`}
+              onClick={() => router.push('/teams')}
+            >
+              我的团队
+            </Button>
+          </li>
+          <li>
+            <Button
+              variant="ghost"
               className={`h-8 ${pathname === '/about' ? 'bg-accent' : ''}`}
               onClick={() => router.push('/about')}
             >

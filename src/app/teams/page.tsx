@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
 
 export default function TeamsPage() {
   const router = useRouter()
@@ -39,7 +40,7 @@ export default function TeamsPage() {
   const [showCreateDialog, setShowCreateDialog] = React.useState(false)
   const [showApplyDialog, setShowApplyDialog] = React.useState(false)
   const [applyingTeamId, setApplyingTeamId] = React.useState<number | null>(null)
-  const [showAllTeams, setShowAllTeams] = React.useState(false)
+  const [showAllTeams, setShowAllTeams] = React.useState(true)
   const debouncedKeyword = useDebounce(keyword, 500)
   const abortControllerRef = React.useRef<AbortController | null>(null)
 
@@ -105,10 +106,10 @@ export default function TeamsPage() {
             </Button>
           </div>
 
-          <Tabs defaultValue="teams" className="w-full px-2" onValueChange={(value) => setShowAllTeams(value === 'all-teams')}>
+          <Tabs defaultValue="all-teams" className="w-full px-2" onValueChange={(value) => setShowAllTeams(value === 'all-teams')}>
             <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="teams" className="flex-1 sm:flex-none">我加入的团队</TabsTrigger>
               <TabsTrigger value="all-teams" className="flex-1 sm:flex-none">所有团队</TabsTrigger>
+              <TabsTrigger value="teams" className="flex-1 sm:flex-none">我加入的团队</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -127,6 +128,77 @@ export default function TeamsPage() {
           {loading ? (
             <div className="flex items-center justify-center h-48 sm:h-64">
               <Spinner className="h-8 w-8" />
+            </div>
+          ) : showAllTeams ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2">
+              {teams.map((team) => (
+                <Card
+                  key={team.id}
+                  className="transition-colors hover:bg-muted/50"
+                >
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage 
+                          src={getTeamAvatarUrl(team)} 
+                          alt={team.name}
+                        />
+                        <AvatarFallback>
+                          {getTeamAvatarUrl(team) ? (
+                            <Skeleton className="h-full w-full rounded-full animate-pulse" />
+                          ) : (
+                            team.name.slice(0, 2).toUpperCase()
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1 flex-1">
+                        <h3 className="font-semibold text-lg leading-none">{team.name}</h3>
+                        {team.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {team.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span>成员数量: {team.member_count}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span>创建者: {team.owner?.nickname || team.owner?.username}</span>
+                        </div>
+                      </div>
+                      <div>
+                        创建于 {format(new Date(team.created_at), "yyyy-MM-dd")}
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardContent className="pt-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={(e) => {
+                        if (team.is_joined) {
+                          router.push(`/teams/${team.id}`)
+                        } else {
+                          handleApply(team.id)
+                        }
+                      }}
+                    >
+                      {team.is_joined ? "进入团队" : "申请加入"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+              {teams.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  {debouncedKeyword ? "无搜索结果" : "暂无团队"}
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto bg-card">
@@ -210,8 +282,6 @@ export default function TeamsPage() {
                       <TableCell colSpan={4} className="text-center">
                         {debouncedKeyword ? (
                           "无搜索结果"
-                        ) : showAllTeams ? (
-                          "暂无团队"
                         ) : (
                           "您还没有加入任何团队"
                         )}

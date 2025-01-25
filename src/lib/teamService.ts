@@ -6,7 +6,7 @@ export interface TeamMember {
   team_id?: number;
   user_id: number;
   username: string;
-  real_name?: string;
+  nickname?: string;
   avatar?: string;
   role: 'owner' | 'admin' | 'member';
   joined_at: string;
@@ -28,7 +28,7 @@ export interface TeamDetail {
     id: number;
     username: string;
     email: string;
-    real_name?: string;
+    nickname?: string;
     created_at: string;
     updated_at: string;
   };
@@ -298,4 +298,17 @@ export const handleTeamApply = async (data: {
     console.error('处理团队申请失败:', error);
     throw error;
   }
-}; 
+};
+
+// 更新团队内昵称
+export const updateTeamNickname = async (teamId: number, nickname: string) => {
+  try {
+    const response = await apiClient.put(`/teams/${teamId}/changeNickname`, {
+      nickname
+    });
+    return response.data;
+  } catch (error) {
+    console.error('更新团队内昵称失败:', error);
+    throw error;
+  }
+};

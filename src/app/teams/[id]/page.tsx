@@ -139,7 +139,7 @@ export default function TeamDetailPage() {
       toast.success("团队已删除")
       router.push('/teams')
     } catch (error) {
-      toast.error("删除团队失败")
+      toast.error("解散团队失败")
     }
   }
 
@@ -291,7 +291,7 @@ export default function TeamDetailPage() {
                     className="w-full sm:w-auto"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    删除团队
+                    解散团队
                   </Button>
                 )}
               </>
@@ -481,9 +481,9 @@ export default function TeamDetailPage() {
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>确定要删除团队吗？</DialogTitle>
+              <DialogTitle>确定要解散团队吗？</DialogTitle>
               <DialogDescription>
-                此操作不可撤销。删除团队后，所有成员将被移除，团队的所有数据将被永久删除。
+                此操作不可撤销。解散团队后，所有成员将被移除，团队的所有数据将被永久删除。
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -497,7 +497,7 @@ export default function TeamDetailPage() {
                 variant="destructive"
                 onClick={handleDeleteTeam}
               >
-                删除团队
+                解散团队
               </Button>
             </DialogFooter>
           </DialogContent>

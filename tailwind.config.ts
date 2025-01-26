@@ -69,23 +69,23 @@ export default {
   		typography: {
   			DEFAULT: {
   				css: {
-  					'code::before': {
-  						content: '""'
-  					},
-  					'code::after': {
-  						content: '""'
-  					},
-  					'blockquote p:first-of-type::before': {
-  						content: '""'
-  					},
-  					'blockquote p:last-of-type::after': {
-  						content: '""'
-  					},
+					'code::before': {
+						content: '""'
+					},
+					'code::after': {
+						content: '""'
+					},
+					'blockquote p:first-of-type::before': {
+						content: '""'
+					},
+					'blockquote p:last-of-type::after': {
+						content: '""'
+					},
   					code: {
   						backgroundColor: 'hsl(var(--muted))',
   						padding: '0.2em 0.4em',
   						borderRadius: '0.25rem',
-  						fontWeight: '400',
+  						fontWeight: '400'
   					},
   					'code, pre': {
   						fontFamily: 'var(--font-mono)'
@@ -113,6 +113,28 @@ export default {
   					}
   				}
   			}
+  		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
   		}
   	}
   },

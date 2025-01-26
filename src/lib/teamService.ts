@@ -42,6 +42,55 @@ export interface TeamMemberListResponse {
   page_size: number;
 }
 
+// 团队作业题目接口
+export interface TeamAssignmentProblem {
+  assignment_id: number;
+  problem_id: number;
+  order_index: number;
+  score: number;
+}
+
+// 团队作业接口
+export interface TeamAssignment {
+  id: number;
+  team_id: number;
+  title: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  problems?: TeamAssignmentProblem[];
+}
+
+// 创建作业请求接口
+export interface CreateAssignmentRequest {
+  team_id: number;
+  title: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  problems: {
+    problem_id: number;
+    order_index: number;
+    score: number;
+  }[];
+}
+
+// 更新作业请求接口
+export interface UpdateAssignmentRequest {
+  title?: string;
+  description?: string;
+  start_time?: string;
+  end_time?: string;
+  problems?: {
+    problem_id: number;
+    order_index: number;
+    score: number;
+  }[];
+}
+
 // 创建团队
 export const createTeam = async (data: {
   name: string;
@@ -309,6 +358,69 @@ export const updateTeamNickname = async (teamId: number, nickname: string) => {
     return response.data;
   } catch (error) {
     console.error('更新团队内昵称失败:', error);
+    throw error;
+  }
+};
+
+// 获取作业列表
+export const getAssignmentList = async (teamId: number) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: TeamAssignment[];
+    }>('/teams/assignments', {
+      params: {
+        team_id: teamId
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('获取作业列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取作业详情
+export const getAssignmentDetail = async (assignmentId: number) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: TeamAssignment;
+    }>(`/teams/assignments/${assignmentId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('获取作业详情失败:', error);
+    throw error;
+  }
+};
+
+// 创建作业
+export const createAssignment = async (data: CreateAssignmentRequest) => {
+  try {
+    const response = await apiClient.post<{
+      code: number;
+      message: string;
+      data: {
+        assignment_id: number;
+      }
+    }>('/teams/assignments', data);
+    return response.data;
+  } catch (error) {
+    console.error('创建作业失败:', error);
+    throw error;
+  }
+};
+
+// 更新作业
+export const updateAssignment = async (assignmentId: number, data: UpdateAssignmentRequest) => {
+  try {
+    const response = await apiClient.put<{
+      code: number;
+      message: string;
+    }>(`/teams/assignments/${assignmentId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('更新作业失败:', error);
     throw error;
   }
 };

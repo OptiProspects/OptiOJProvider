@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter, useParams } from "next/navigation"
 import { format } from "date-fns"
-import { Users, Settings, UserPlus, Trash2, MoreVertical, UserCog } from "lucide-react"
+import { Users, Settings, UserPlus, Trash2, MoreVertical, UserCog, GraduationCap, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import Navbar from "@/components/Navbar"
@@ -37,10 +37,13 @@ import {
   updateTeamMemberRole,
   getTeamMembers,
   updateTeamNickname,
+  getAssignmentList,
+  type TeamAssignment
 } from "@/lib/teamService"
 import type { TeamDetail, TeamMember } from "@/lib/teamService"
 import { TeamInviteDialog } from "@/components/team/team-invite-dialog"
 import { TeamSettingsDialog } from "@/components/team/team-settings-dialog"
+import { CreateAssignmentDialog } from "@/components/team/create-assignment-dialog"
 import { getApiEndpoint } from '@/config/apiConfig';
 
 export default function TeamDetailPage() {
@@ -56,6 +59,7 @@ export default function TeamDetailPage() {
   const [showInviteDialog, setShowInviteDialog] = React.useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = React.useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
+  const [showCreateAssignmentDialog, setShowCreateAssignmentDialog] = React.useState(false)
   const [deletingMember, setDeletingMember] = React.useState<{
     id: number;
     displayName: string;
@@ -65,6 +69,8 @@ export default function TeamDetailPage() {
   const [nickname, setNickname] = React.useState("")
   const [submitting, setSubmitting] = React.useState(false)
   const [currentUserNickname, setCurrentUserNickname] = React.useState<string>("")
+  const [assignments, setAssignments] = React.useState<TeamAssignment[]>([])
+  const [loadingAssignments, setLoadingAssignments] = React.useState(false)
 
   const fetchTeam = React.useCallback(async () => {
     try {
@@ -117,6 +123,20 @@ export default function TeamDetailPage() {
     setMemberAvatars(avatars)
   }, [])
 
+  const fetchAssignments = React.useCallback(async () => {
+    if (!team) return
+    try {
+      setLoadingAssignments(true)
+      const data = await getAssignmentList(team.id)
+      setAssignments(data)
+    } catch (error) {
+      console.error("获取作业列表失败:", error)
+      toast.error("获取作业列表失败")
+    } finally {
+      setLoadingAssignments(false)
+    }
+  }, [team])
+
   React.useEffect(() => {
     if (members.length > 0) {
       fetchMemberAvatars(members)
@@ -132,6 +152,12 @@ export default function TeamDetailPage() {
       fetchMembers()
     }
   }, [team, fetchMembers])
+
+  React.useEffect(() => {
+    if (team) {
+      fetchAssignments()
+    }
+  }, [team, fetchAssignments])
 
   const handleDeleteTeam = async () => {
     try {
@@ -307,6 +333,10 @@ export default function TeamDetailPage() {
               <Users className="h-4 w-4" />
               <span>成员列表</span>
             </TabsTrigger>
+            <TabsTrigger value="assignments" className="space-x-2">
+              <GraduationCap className="h-4 w-4" />
+              <span>作业列表</span>
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="members" className="space-y-4">
             <div className="rounded-md border overflow-x-auto">
@@ -459,6 +489,63 @@ export default function TeamDetailPage() {
               </div>
             </div>
           </TabsContent>
+          <TabsContent value="assignments" className="space-y-4">
+            {isAdmin && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setShowCreateAssignmentDialog(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  创建作业
+                </Button>
+              </div>
+            )}
+            <div className="rounded-md border">
+              <div className="p-4">
+                {loadingAssignments ? (
+                  <div className="py-8 text-center">
+                    <Spinner className="h-8 w-8 mx-auto" />
+                  </div>
+                ) : assignments.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    暂无作业
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {assignments.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border gap-4"
+                      >
+                        <div className="space-y-1">
+                          <h3 className="font-medium">{assignment.title}</h3>
+                          {assignment.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {assignment.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                            <div>
+                              开始时间：{format(new Date(assignment.start_time), "yyyy-MM-dd HH:mm")}
+                            </div>
+                            <div>
+                              截止时间：{format(new Date(assignment.end_time), "yyyy-MM-dd HH:mm")}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push(`/teams/${team?.id}/assignments/${assignment.id}`)}
+                        >
+                          查看详情
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
 
         {showInviteDialog && (
@@ -573,6 +660,15 @@ export default function TeamDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {showCreateAssignmentDialog && team && (
+          <CreateAssignmentDialog
+            teamId={team.id}
+            open={showCreateAssignmentDialog}
+            onOpenChange={setShowCreateAssignmentDialog}
+            onSuccess={fetchAssignments}
+          />
+        )}
       </div>
     </>
   )

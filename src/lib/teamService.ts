@@ -46,6 +46,8 @@ export interface TeamMemberListResponse {
 export interface TeamAssignmentProblem {
   assignment_id: number;
   problem_id: number;
+  problem_type: 'global' | 'team';
+  team_problem_id?: number;
   order_index: number;
   score: number;
 }
@@ -73,6 +75,8 @@ export interface CreateAssignmentRequest {
   end_time: string;
   problems: {
     problem_id: number;
+    problem_type: 'global' | 'team';
+    team_problem_id?: number;
     order_index: number;
     score: number;
   }[];
@@ -86,9 +90,40 @@ export interface UpdateAssignmentRequest {
   end_time?: string;
   problems?: {
     problem_id: number;
+    problem_type: 'global' | 'team';
+    team_problem_id?: number;
     order_index: number;
     score: number;
   }[];
+}
+
+// 题目标签接口
+export interface ProblemTag {
+  id: number;
+  name: string;
+  color: string;
+}
+
+// 可用题目信息接口
+export interface AvailableProblemInfo {
+  id: number;
+  type: 'global' | 'team';
+  team_problem_id: number;
+  title: string;
+  time_limit: number;
+  memory_limit: number;
+  tags: string; // JSON string of ProblemTag[]
+  difficulty: 'beginner' | 'easy' | 'medium' | 'hard' | 'expert';
+  created_by: number;
+  created_at: string;
+}
+
+// 获取可用题目列表响应接口
+export interface AvailableProblemListResponse {
+  problems: AvailableProblemInfo[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 // 创建团队
@@ -368,7 +403,7 @@ export const getAssignmentList = async (teamId: number) => {
     const response = await apiClient.get<{
       code: number;
       data: TeamAssignment[];
-    }>('/teams/assignments', {
+    }>('/teams/assignments/getAssignmentList', {
       params: {
         team_id: teamId
       }
@@ -386,7 +421,7 @@ export const getAssignmentDetail = async (assignmentId: number) => {
     const response = await apiClient.get<{
       code: number;
       data: TeamAssignment;
-    }>(`/teams/assignments/${assignmentId}`);
+    }>(`/teams/assignments/${assignmentId}/getAssignmentDetail`);
     return response.data.data;
   } catch (error) {
     console.error('获取作业详情失败:', error);
@@ -403,7 +438,7 @@ export const createAssignment = async (data: CreateAssignmentRequest) => {
       data: {
         assignment_id: number;
       }
-    }>('/teams/assignments', data);
+    }>('/teams/assignments/createAssignment', data);
     return response.data;
   } catch (error) {
     console.error('创建作业失败:', error);
@@ -417,10 +452,32 @@ export const updateAssignment = async (assignmentId: number, data: UpdateAssignm
     const response = await apiClient.put<{
       code: number;
       message: string;
-    }>(`/teams/assignments/${assignmentId}`, data);
+    }>(`/teams/assignments/${assignmentId}/updateAssignment`, data);
     return response.data;
   } catch (error) {
     console.error('更新作业失败:', error);
+    throw error;
+  }
+};
+
+// 获取可用题目列表
+export const getAvailableProblems = async (params: {
+  team_id: number;
+  page: number;
+  page_size: number;
+  keyword?: string;
+  type?: 'all' | 'global' | 'team';
+}) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: AvailableProblemListResponse;
+    }>('/teams/assignments/getAvailableProblems', {
+      params
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('获取可用题目列表失败:', error);
     throw error;
   }
 };

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter, useParams } from "next/navigation"
 import { format } from "date-fns"
-import { Users, Settings, UserPlus, Trash2, MoreVertical, UserCog, GraduationCap, Plus } from "lucide-react"
+import { Users, Settings, UserPlus, Trash2, MoreVertical, UserCog, GraduationCap, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 
 import Navbar from "@/components/Navbar"
@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Calendar } from "@/components/ui/calendar"
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,13 +45,14 @@ import {
   getTeamMembers,
   updateTeamNickname,
   getAssignmentList,
+  createAssignment,
   type TeamAssignment
 } from "@/lib/teamService"
 import type { TeamDetail, TeamMember } from "@/lib/teamService"
 import { TeamInviteDialog } from "@/components/team/team-invite-dialog"
 import { TeamSettingsDialog } from "@/components/team/team-settings-dialog"
-import { CreateAssignmentDialog } from "@/components/team/create-assignment-dialog"
 import { getApiEndpoint } from '@/config/apiConfig';
+import { AssignmentForm } from "@/components/team/assignment-form"
 
 export default function TeamDetailPage() {
   const router = useRouter()
@@ -59,7 +67,6 @@ export default function TeamDetailPage() {
   const [showInviteDialog, setShowInviteDialog] = React.useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = React.useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
-  const [showCreateAssignmentDialog, setShowCreateAssignmentDialog] = React.useState(false)
   const [deletingMember, setDeletingMember] = React.useState<{
     id: number;
     displayName: string;
@@ -71,6 +78,7 @@ export default function TeamDetailPage() {
   const [currentUserNickname, setCurrentUserNickname] = React.useState<string>("")
   const [assignments, setAssignments] = React.useState<TeamAssignment[]>([])
   const [loadingAssignments, setLoadingAssignments] = React.useState(false)
+  const [showAssignmentForm, setShowAssignmentForm] = React.useState(false)
 
   const fetchTeam = React.useCallback(async () => {
     try {
@@ -492,13 +500,34 @@ export default function TeamDetailPage() {
           <TabsContent value="assignments" className="space-y-4">
             {isAdmin && (
               <div className="flex justify-end">
-                <Button
-                  onClick={() => setShowCreateAssignmentDialog(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  创建作业
-                </Button>
+                {showAssignmentForm ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAssignmentForm(false)}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    取消创建
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setShowAssignmentForm(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    创建作业
+                  </Button>
+                )}
               </div>
+            )}
+            {showAssignmentForm && (
+              <AssignmentForm
+                teamId={team.id}
+                onSuccess={() => {
+                  setShowAssignmentForm(false)
+                  fetchAssignments()
+                }}
+                onCancel={() => setShowAssignmentForm(false)}
+              />
             )}
             <div className="rounded-md border">
               <div className="p-4">
@@ -660,15 +689,6 @@ export default function TeamDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {showCreateAssignmentDialog && team && (
-          <CreateAssignmentDialog
-            teamId={team.id}
-            open={showCreateAssignmentDialog}
-            onOpenChange={setShowCreateAssignmentDialog}
-            onSuccess={fetchAssignments}
-          />
-        )}
       </div>
     </>
   )

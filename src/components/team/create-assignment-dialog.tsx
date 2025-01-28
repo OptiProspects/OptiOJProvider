@@ -115,7 +115,6 @@ export function CreateAssignmentDialog({
             <DateTimePicker
               date={startDate}
               onDateChange={setStartDate}
-              placeholder="选择开始时间"
             />
           </div>
           <div className="grid gap-2">
@@ -125,7 +124,6 @@ export function CreateAssignmentDialog({
             <DateTimePicker
               date={endDate}
               onDateChange={setEndDate}
-              placeholder="选择结束时间"
             />
           </div>
         </div>

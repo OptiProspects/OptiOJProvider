@@ -183,7 +183,7 @@ export interface ProblemDetail {
   description: string;
   input_description: string;
   output_description: string;
-  samples: string;
+  sample_cases: string;
   hint?: string;
   source?: string;
   difficulty_system: "normal" | "oi";
@@ -204,6 +204,7 @@ export interface ProblemDetail {
     color: string;
     created_at: string;
   }>;
+  user_status?: 'accepted' | 'attempted' | null;
 }
 
 // 获取公开题目列表

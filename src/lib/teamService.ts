@@ -1,5 +1,11 @@
 import apiClient from '@/config/apiConfig';
 import { getApiEndpoint } from '@/config/apiConfig';
+import axios from 'axios';
+
+interface APIResponse<T> {
+  code: number;
+  data: T;
+}
 
 // 团队成员接口
 export interface TeamMember {
@@ -124,6 +130,64 @@ export interface AvailableProblemListResponse {
   total: number;
   page: number;
   page_size: number;
+}
+
+// 提交统计接口
+export interface SubmissionStats {
+  total_count: number;
+  accepted_count: number;
+  accepted_rate: number;
+  status_counts: Record<string, number>;
+}
+
+// 作业题目详情接口
+export interface AssignmentProblemDetail {
+  id: number;
+  type: 'global' | 'team';
+  team_problem_id?: number;
+  title: string;
+  time_limit: number;
+  memory_limit: number;
+  tags: string; // JSON string of ProblemTag[]
+  difficulty: 'beginner' | 'easy' | 'medium' | 'hard' | 'expert' | 'team';
+  score: number;
+  order_index: number;
+  submission_stats: SubmissionStats;
+}
+
+// 获取作业题目列表响应接口
+export interface GetAssignmentProblemsResponse {
+  problems: AssignmentProblemDetail[];
+}
+
+export interface AssignmentProblemFullDetail {
+  id: number
+  type: 'global' | 'team'
+  team_problem_id?: number
+  title: string
+  description: string
+  input_description: string
+  output_description: string
+  time_limit: number
+  memory_limit: number
+  tags: string
+  difficulty: string
+  score: number
+  sample_cases: string
+  hint: string
+  submission_stats: SubmissionStats
+}
+
+export async function getAssignmentProblemDetail(params: {
+  assignment_id: number
+  problem_id: number
+  problem_type: 'global' | 'team'
+  team_id: number
+}): Promise<AssignmentProblemFullDetail> {
+  const { data } = await axios.get<APIResponse<AssignmentProblemFullDetail>>('/teams/assignments/getProblemDetail', {
+    params
+  })
+  return data.data
 }
 
 // 创建团队
@@ -478,6 +542,25 @@ export const getAvailableProblems = async (params: {
     return response.data.data;
   } catch (error) {
     console.error('获取可用题目列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取作业题目列表
+export const getAssignmentProblems = async (params: {
+  assignment_id: number;
+  team_id: number;
+}) => {
+  try {
+    const response = await apiClient.get<{
+      code: number;
+      data: GetAssignmentProblemsResponse;
+    }>('/teams/assignments/getAssignmentProblems', {
+      params
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('获取作业题目列表失败:', error);
     throw error;
   }
 };

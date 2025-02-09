@@ -119,7 +119,7 @@ export function EditProblemDialog({
       description: problem.description,
       input_description: problem.input_description,
       output_description: problem.output_description,
-      samples: problem.samples,
+      samples: problem.sample_cases,
       hint: problem.hint || '',
       source: problem.source || '',
       difficulty: problem.difficulty,
@@ -176,7 +176,7 @@ export function EditProblemDialog({
   React.useEffect(() => {
     if (problem) {
       try {
-        const parsedSamples = JSON.parse(problem.samples)
+        const parsedSamples = JSON.parse(problem.sample_cases)
         setSamples(parsedSamples)
       } catch {
         setSamples([{ input: "", output: "", explanation: "" }])
@@ -187,13 +187,8 @@ export function EditProblemDialog({
   const onSubmit = async (data: FormData) => {
     try {
       if (!useJsonInput) {
-        // 过滤掉空的样例
-        const validSamples = samples.filter(s => s.input.trim() || s.output.trim())
-        if (validSamples.length === 0) {
-          toast.error("请至少添加一个样例")
-          return
-        }
-        data.samples = JSON.stringify(validSamples)
+        // 使用已经同步到表单中的数据，无需重复验证和设置
+        data.samples = form.getValues('samples')
       }
       await adminUpdateProblem(problem.id, data)
       toast.success("更新成功")
@@ -206,18 +201,36 @@ export function EditProblemDialog({
     }
   }
 
-  const addSample = () => {
-    setSamples([...samples, { input: "", output: "", explanation: "" }])
-  }
-
-  const removeSample = (index: number) => {
-    setSamples(samples.filter((_, i) => i !== index))
-  }
-
   const updateSample = (index: number, field: keyof Sample, value: string) => {
     const newSamples = [...samples]
     newSamples[index] = { ...newSamples[index], [field]: value }
     setSamples(newSamples)
+    // 同步更新表单数据
+    const validSamples = newSamples.filter(s => s.input.trim() || s.output.trim())
+    if (validSamples.length > 0) {
+      form.setValue('samples', JSON.stringify(validSamples), {
+        shouldValidate: true,
+        shouldDirty: true
+      })
+    }
+  }
+
+  const addSample = () => {
+    const newSamples = [...samples, { input: "", output: "", explanation: "" }]
+    setSamples(newSamples)
+  }
+
+  const removeSample = (index: number) => {
+    const newSamples = samples.filter((_, i) => i !== index)
+    setSamples(newSamples)
+    // 同步更新表单数据
+    const validSamples = newSamples.filter(s => s.input.trim() || s.output.trim())
+    if (validSamples.length > 0) {
+      form.setValue('samples', JSON.stringify(validSamples), {
+        shouldValidate: true,
+        shouldDirty: true
+      })
+    }
   }
 
   return (

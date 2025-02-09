@@ -50,7 +50,7 @@ interface CodeEditorProps {
   onOpenChange: (open: boolean) => void
   problem?: {
     id: number
-    samples: string
+    sample_cases: string
     title: string
   }
 }
@@ -96,20 +96,20 @@ export function CodeEditor({ isOpen, onOpenChange, problem }: CodeEditorProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   React.useEffect(() => {
-    if (problem?.samples) {
+    if (problem?.sample_cases) {
       try {
-        console.log('原始样例数据:', problem.samples)
-        const parsedSamples = JSON.parse(problem.samples)
+        console.log('原始样例数据:', problem.sample_cases)
+        const parsedSamples = JSON.parse(problem.sample_cases)
         console.log('解析后的样例数据:', parsedSamples)
         setSamples(parsedSamples)
       } catch (error) {
         console.error('解析测试样例失败:', error)
-        console.error('样例数据:', problem.samples)
+        console.error('样例数据:', problem.sample_cases)
       }
     } else {
       console.log('没有收到样例数据:', problem)
     }
-  }, [problem?.samples])
+  }, [problem?.sample_cases])
 
   const handleFillSample = (index: number) => {
     console.log('点击样例按钮:', index)

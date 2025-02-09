@@ -81,10 +81,13 @@ export function AssignmentProblemDialog({
         keyword,
         type: problemType
       })
-      setProblems(data.problems)
-      setTotal(data.total)
+      setProblems(data.problems || [])
+      setTotal(data.total || 0)
     } catch (error) {
+      console.error("获取题目列表失败:", error)
       toast.error("获取题目列表失败")
+      setProblems([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
@@ -93,6 +96,15 @@ export function AssignmentProblemDialog({
   React.useEffect(() => {
     if (open) {
       fetchProblems()
+    } else {
+      // 关闭对话框时重置状态
+      setProblems([])
+      setTotal(0)
+      setPage(1)
+      setKeyword("")
+      setProblemType('all')
+      setSelectedProblem(null)
+      setScore("100")
     }
   }, [open, fetchProblems])
 
@@ -116,20 +128,21 @@ export function AssignmentProblemDialog({
       return
     }
 
-    const problems = [...(assignment.problems || [])]
-    problems.push({
+    const existingProblems = assignment.problems || []
+    const updatedProblems = [...existingProblems]
+    updatedProblems.push({
       assignment_id: assignment.id,
       problem_id: selectedProblem.id,
       problem_type: selectedProblem.type,
       team_problem_id: selectedProblem.type === 'team' ? selectedProblem.team_problem_id : undefined,
-      order_index: problems.length,
+      order_index: updatedProblems.length,
       score: parseInt(score)
     })
 
     try {
       setSubmitting(true)
       await updateAssignment(assignment.id, {
-        problems: problems.map(p => ({
+        problems: updatedProblems.map(p => ({
           problem_id: p.problem_id,
           problem_type: p.problem_type,
           team_problem_id: p.team_problem_id,
@@ -140,12 +153,8 @@ export function AssignmentProblemDialog({
       toast.success("添加题目成功")
       onSuccess()
       onOpenChange(false)
-      // 重置表单
-      setProblemType('all')
-      setKeyword("")
-      setScore("100")
-      setSelectedProblem(null)
     } catch (error) {
+      console.error("添加题目失败:", error)
       toast.error("添加题目失败")
     } finally {
       setSubmitting(false)
@@ -170,6 +179,7 @@ export function AssignmentProblemDialog({
                   placeholder="搜索题目..."
                   className="pl-8"
                   onChange={(e) => debouncedSearch(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -179,6 +189,7 @@ export function AssignmentProblemDialog({
                 setProblemType(value)
                 setPage(1)
               }}
+              disabled={loading}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
@@ -213,8 +224,8 @@ export function AssignmentProblemDialog({
                     </TableRow>
                   ) : problems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                        暂无题目
+                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        {keyword ? "未找到匹配的题目" : "暂无题目"}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -226,21 +237,23 @@ export function AssignmentProblemDialog({
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium">{problem.title}</div>
-                            <div className="flex flex-wrap gap-1">
-                              {JSON.parse(problem.tags).map((tag: ProblemTag) => (
-                                <Badge
-                                  key={tag.id}
-                                  variant="secondary"
-                                  className="max-w-[120px] truncate"
-                                  style={{
-                                    backgroundColor: `${tag.color}20`,
-                                    color: tag.color,
-                                  }}
-                                >
-                                  {tag.name}
-                                </Badge>
-                              ))}
-                            </div>
+                            {problem.type === 'global' && problem.tags && (
+                              <div className="flex flex-wrap gap-1">
+                                {JSON.parse(problem.tags).map((tag: ProblemTag) => (
+                                  <Badge
+                                    key={tag.id}
+                                    variant="secondary"
+                                    className="max-w-[120px] truncate"
+                                    style={{
+                                      backgroundColor: `${tag.color}20`,
+                                      color: tag.color,
+                                    }}
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

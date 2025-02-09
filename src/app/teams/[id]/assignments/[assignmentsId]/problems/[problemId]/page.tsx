@@ -243,26 +243,22 @@ export default function ProblemDetailPage() {
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">样例</h3>
-                      {problem.sample_cases && problem.sample_cases !== "" ? 
-                        JSON.parse(problem.sample_cases).map((sample: { input: string; output: string }, index: number) => (
-                          <div key={index} className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <div className="font-medium">输入 #{index + 1}</div>
-                              <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
-                                {sample.input}
-                              </pre>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="font-medium">输出 #{index + 1}</div>
-                              <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
-                                {sample.output}
-                              </pre>
-                            </div>
+                      {JSON.parse(problem.samples).map((sample: { input: string; output: string }, index: number) => (
+                        <div key={index} className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div className="font-medium">输入 #{index + 1}</div>
+                            <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
+                              {sample.input}
+                            </pre>
                           </div>
-                        ))
-                      : (
-                        <div className="text-muted-foreground">暂无样例</div>
-                      )}
+                          <div className="space-y-2">
+                            <div className="font-medium">输出 #{index + 1}</div>
+                            <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
+                              {sample.output}
+                            </pre>
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {problem.hint && (
@@ -338,4 +334,4 @@ export default function ProblemDetailPage() {
       </main>
     </div>
   )
-} 
+}

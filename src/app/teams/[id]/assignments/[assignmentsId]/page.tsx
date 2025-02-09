@@ -2,12 +2,14 @@
 
 import * as React from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react"
+import { ArrowLeft, Plus, Pencil, Trash2, Clock, HardDrive, CheckCircle2, XCircle } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -27,17 +29,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { getAssignmentDetail, getTeamDetail, updateAssignment } from "@/lib/teamService"
-import type { TeamAssignment, TeamDetail } from "@/lib/teamService"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  getAssignmentDetail,
+  getTeamDetail,
+  updateAssignment,
+  getAssignmentProblems
+} from "@/lib/teamService"
+import type {
+  TeamAssignment,
+  TeamDetail,
+  AssignmentProblemDetail,
+  ProblemTag
+} from "@/lib/teamService"
 import { AssignmentProblemDialog } from "@/components/team/assignment-problem-dialog"
 import Navbar from "@/components/Navbar"
+
+// 难度对应的颜色和文本
+const difficultyConfig = {
+  beginner: { label: "入门", color: "bg-green-500/10 text-green-500 hover:bg-green-500/20" },
+  easy: { label: "简单", color: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20" },
+  medium: { label: "中等", color: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20" },
+  hard: { label: "困难", color: "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20" },
+  expert: { label: "专家", color: "bg-red-500/10 text-red-500 hover:bg-red-500/20" },
+  team: { label: "团队题目", color: "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20" },
+} as const
 
 export default function AssignmentDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [assignment, setAssignment] = React.useState<TeamAssignment | null>(null)
   const [team, setTeam] = React.useState<TeamDetail | null>(null)
+  const [problems, setProblems] = React.useState<AssignmentProblemDetail[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [loadingProblems, setLoadingProblems] = React.useState(false)
   const [showAddProblemDialog, setShowAddProblemDialog] = React.useState(false)
   const [deletingProblemIndex, setDeletingProblemIndex] = React.useState<number | null>(null)
 
@@ -58,32 +88,54 @@ export default function AssignmentDetailPage() {
     }
   }, [params.assignmentsId, params.id])
 
+  const fetchProblems = React.useCallback(async () => {
+    if (!assignment || !team) return
+    try {
+      setLoadingProblems(true)
+      const data = await getAssignmentProblems({
+        assignment_id: assignment.id,
+        team_id: team.id
+      })
+      setProblems(data.problems)
+    } catch (error) {
+      console.error("获取题目列表失败:", error)
+      toast.error("获取题目列表失败")
+    } finally {
+      setLoadingProblems(false)
+    }
+  }, [assignment, team])
+
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  const handleDeleteProblem = async () => {
-    if (deletingProblemIndex === null || !assignment) return
+  React.useEffect(() => {
+    if (assignment && team) {
+      fetchProblems()
+    }
+  }, [assignment, team, fetchProblems])
 
-    const problems = [...(assignment.problems || [])]
-    problems.splice(deletingProblemIndex, 1)
+  const handleDeleteProblem = async () => {
+    if (deletingProblemIndex === null || !assignment || !problems[deletingProblemIndex]) return
+
+    const updatedProblems = problems.filter((_, index) => index !== deletingProblemIndex)
     // 更新顺序
-    problems.forEach((p, index) => {
+    updatedProblems.forEach((p, index) => {
       p.order_index = index
     })
 
     try {
       await updateAssignment(assignment.id, {
-        problems: problems.map(p => ({
-          problem_id: p.problem_id,
-          problem_type: p.problem_type,
+        problems: updatedProblems.map(p => ({
+          problem_id: p.id,
+          problem_type: p.type,
           team_problem_id: p.team_problem_id,
           order_index: p.order_index,
           score: p.score
         }))
       })
       toast.success("删除题目成功")
-      fetchData()
+      fetchProblems()
     } catch (error) {
       toast.error("删除题目失败")
     } finally {
@@ -191,28 +243,91 @@ export default function AssignmentDetailPage() {
               )}
             </CardHeader>
             <CardContent>
-              {assignment.problems && assignment.problems.length > 0 ? (
+              {loadingProblems ? (
+                <div className="py-8 text-center">
+                  <Spinner className="h-8 w-8 mx-auto" />
+                </div>
+              ) : problems.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground">暂无题目</p>
+                </div>
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>序号</TableHead>
-                      <TableHead>题目类型</TableHead>
-                      <TableHead>题目ID</TableHead>
+                      <TableHead>标题</TableHead>
+                      <TableHead>难度</TableHead>
                       <TableHead>分值</TableHead>
+                      <TableHead>提交情况</TableHead>
+                      <TableHead>限制</TableHead>
                       {isAdmin && <TableHead className="w-[100px]">操作</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {assignment.problems.map((problem, index) => (
-                      <TableRow key={`${problem.problem_type}-${problem.problem_id}`}>
+                    {problems.map((problem, index) => (
+                      <TableRow key={`${problem.type}-${problem.id}`}>
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>
-                          {problem.problem_type === 'global' ? '全局题目' : '团队题目'}
+                          <div className="space-y-1">
+                            <Link
+                              href={`/teams/${params.id}/assignments/${params.assignmentsId}/problems/${problem.id}`}
+                              className="font-medium hover:underline"
+                            >
+                              {problem.title}
+                            </Link>
+                            {problem.type === 'global' && (
+                              <div className="flex flex-wrap gap-1">
+                                {JSON.parse(problem.tags).map((tag: ProblemTag) => (
+                                  <Badge
+                                    key={tag.id}
+                                    variant="secondary"
+                                    className="max-w-[120px] truncate"
+                                    style={{
+                                      backgroundColor: `${tag.color}20`,
+                                      color: tag.color,
+                                    }}
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          {problem.problem_type === 'global' ? problem.problem_id : problem.team_problem_id}
+                          <Badge
+                            variant="secondary"
+                            className={difficultyConfig[problem.difficulty].color}
+                          >
+                            {difficultyConfig[problem.difficulty].label}
+                          </Badge>
                         </TableCell>
                         <TableCell>{problem.score}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>总提交：{problem.submission_stats.total_count}</span>
+                            </div>
+                            {problem.submission_stats.total_count > 0 && (
+                              <div className="text-sm text-muted-foreground">
+                                通过率：{(problem.submission_stats.accepted_rate * 100).toFixed(1)}%
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{problem.time_limit}ms</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <HardDrive className="h-3.5 w-3.5" />
+                              <span>{problem.memory_limit}MB</span>
+                            </div>
+                          </div>
+                        </TableCell>
                         {isAdmin && (
                           <TableCell>
                             <Button
@@ -228,10 +343,6 @@ export default function AssignmentDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground">暂无题目</p>
-                </div>
               )}
             </CardContent>
           </Card>
@@ -244,7 +355,7 @@ export default function AssignmentDetailPage() {
               assignment={assignment}
               open={showAddProblemDialog}
               onOpenChange={setShowAddProblemDialog}
-              onSuccess={fetchData}
+              onSuccess={fetchProblems}
             />
 
             <AlertDialog
@@ -271,4 +382,4 @@ export default function AssignmentDetailPage() {
       </div>
     </>
   )
-} 
+}

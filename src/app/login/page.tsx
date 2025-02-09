@@ -16,6 +16,7 @@ import { login } from "@/lib/authService";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
   const [account, setAccount] = useState('');
@@ -31,12 +32,16 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await login(account, password);
+      await login(account, password);
       toast.success('登录成功，欢迎回来 ( •̀ ω •́ )✧');
       router.push('/');
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.error || '登录失败，请检查账号密码';
-      toast.error(errorMessage);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        const errorMessage = error.response?.data?.error || '登录失败，请检查账号密码';
+        toast.error(errorMessage);
+      } else {
+        toast.error('登录时发生未知错误');
+      }
     } finally {
       setIsLoading(false);
     }

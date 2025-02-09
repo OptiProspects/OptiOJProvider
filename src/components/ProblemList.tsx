@@ -47,12 +47,8 @@ const statusMap = {
   null: { icon: Circle, color: "text-muted-foreground" }
 } as const
 
-interface ProblemTag extends Tag {
-  // 保留原有的 ProblemTag 特定字段
-}
-
 interface TagListResponse {
-  tags: ProblemTag[];
+  tags: Tag[];
   total: number;
   page: number;
   page_size: number;
@@ -66,7 +62,7 @@ function ProblemListContent({ showFilters = false }: { showFilters?: boolean }) 
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
-  const [tags, setTags] = React.useState<ProblemTag[]>([])
+  const [tags, setTags] = React.useState<Tag[]>([])
   
   const page = Number(searchParams.get("page")) || 1
   const searchTitle = searchParams.get("title") || ""
@@ -76,6 +72,7 @@ function ProblemListContent({ showFilters = false }: { showFilters?: boolean }) 
     selectedTagsStr ? selectedTagsStr.split(",").filter(Boolean) : []
   , [selectedTagsStr])
   
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchTags = React.useCallback(async () => {
     try {
       const response = await apiClient.get<{ code: number; data: TagListResponse }>("/tags/getTagList", {

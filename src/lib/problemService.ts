@@ -68,7 +68,7 @@ export type CreateProblemData = {
   description: string
   input_description: string
   output_description: string
-  samples: string
+  sample_cases: string
   hint?: string
   source?: string
   difficulty: string

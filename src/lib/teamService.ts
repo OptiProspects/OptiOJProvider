@@ -1,6 +1,5 @@
 import apiClient from '@/config/apiConfig';
 import { getApiEndpoint } from '@/config/apiConfig';
-import axios from 'axios';
 
 interface APIResponse<T> {
   code: number;

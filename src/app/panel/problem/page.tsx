@@ -14,7 +14,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal, Plus, Settings2 } from "lucide-react"
-import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -52,13 +51,14 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Spinner } from "@/components/ui/spinner"
-import { adminGetProblemList, adminGetProblemDetail, adminUpdateProblem, deleteProblem, switchDifficultySystem, getCurrentDifficultySystem, type DifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
+import { adminGetProblemList, adminGetProblemDetail, deleteProblem, switchDifficultySystem, getCurrentDifficultySystem, type DifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
 import type { Problem, ProblemDetail } from "@/lib/problemService"
 import { CreateProblemDialog } from "./create-dialog"
 import { EditProblemDialog } from "./edit-dialog"
 import { TestCaseDialog } from "./testcase-dialog"
 import { DifficultySystemDialog } from "./difficulty-system-dialog"
 import { normalDifficultyMap, oiDifficultyMap } from "@/lib/difficulty"
+import { AxiosError } from "axios"
 
 export default function ProblemPage() {
   const [data, setData] = React.useState<Problem[]>([])
@@ -96,10 +96,15 @@ export default function ProblemPage() {
       
       setData(result.problems || [])
       setTotal(result.total_count)
-    } catch (error: any) {
-      toast.error("加载失败", {
-        description: error.message || "获取题目列表时发生错误",
-      })
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        const errorMessage = error.response?.data?.message || "获取题目列表时发生错误"
+        toast.error(errorMessage)
+      } else {
+        toast.error("加载失败", {
+          description: error instanceof Error ? error.message : "获取题目列表时发生错误",
+        })
+      }
     } finally {
       setLoading(false)
     }

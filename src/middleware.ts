@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
         // 如果不是管理员，重定向到首页
         return NextResponse.redirect(new URL('/', request.url))
       }
-    } catch (error) {
+    } catch {
       // token解析失败，重定向到登录页
       return NextResponse.redirect(new URL('/login', request.url))
     }

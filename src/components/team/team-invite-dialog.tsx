@@ -47,7 +47,7 @@ export function TeamInviteDialog({
       setLoading(true)
       const invitation = await createTeamInvitation(teamId)
       setInviteCode(invitation.code)
-    } catch (error) {
+    } catch {
       toast.error("生成邀请码失败")
     } finally {
       setLoading(false)

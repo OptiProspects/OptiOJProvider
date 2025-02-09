@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { toast } from "sonner"
-import { ImagePlus, X, PencilIcon, UploadIcon, TrashIcon } from "lucide-react"
+import { ImagePlus, PencilIcon, UploadIcon, TrashIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -120,7 +120,7 @@ export function CreateTeamDialog({
       setAvatarPreview(null)
       onOpenChange(false)
       onSuccess()
-    } catch (error) {
+    } catch {
       toast.error("团队创建失败")
     }
   }

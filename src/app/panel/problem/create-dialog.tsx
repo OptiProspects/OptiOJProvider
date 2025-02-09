@@ -10,7 +10,7 @@ import rehypeSanitize from "rehype-sanitize"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import rehypeHighlight from "rehype-highlight"
-import { Check, ChevronsUpDown, X, Plus, Minus } from "lucide-react"
+import { Check, ChevronsUpDown, Plus, Minus } from "lucide-react"
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github-dark.css'
 
@@ -45,18 +45,11 @@ import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { createProblem, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
+import { createProblem, getCurrentDifficultySystem, type DifficultySystemResponse } from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
 
@@ -65,7 +58,7 @@ const formSchema = z.object({
   description: z.string().min(1, "题目描述不能为空"),
   input_description: z.string().min(1, "输入说明不能为空"),
   output_description: z.string().min(1, "输出说明不能为空"),
-  samples: z.string().min(1, "样例数据不能为空").transform(value => {
+  sample_cases: z.string().min(1, "样例数据不能为空").transform(value => {
     try {
       JSON.parse(value);
       return value;
@@ -181,7 +174,7 @@ export function CreateProblemDialog({
           toast.error("请至少添加一个样例")
           return
         }
-        data.samples = JSON.stringify(validSamples)
+        data.sample_cases = JSON.stringify(validSamples)
       }
       await createProblem(data)
       toast.success("创建成功")
@@ -189,9 +182,13 @@ export function CreateProblemDialog({
       setSamples([{ input: "", output: "", explanation: "" }])
       onOpenChange(false)
       onSuccess?.()
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("创建失败", {
-        description: error.response?.data?.message || "请稍后重试"
+        description: error instanceof Error 
+          ? error.message 
+          : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data 
+            ? String(error.response.data.message) 
+            : "请稍后重试")
       })
     }
   }
@@ -323,7 +320,7 @@ export function CreateProblemDialog({
 
                 <FormField
                   control={form.control}
-                  name="samples"
+                  name="sample_cases"
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center justify-between">
@@ -445,7 +442,7 @@ export function CreateProblemDialog({
                   <FormField
                     control={form.control}
                     name="tag_ids"
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>标签</FormLabel>
                         <FormControl>
@@ -484,9 +481,9 @@ export function CreateProblemDialog({
                                 <Input
                                   placeholder="搜索标签..."
                                   className="mb-2"
-                                  onChange={(e) => {
-                                    // TODO: 实现搜索功能
-                                  }}
+                                  // onChange={(e) => {
+                                  //   // TODO: 实现搜索功能
+                                  // }}
                                 />
                                 <ScrollArea className="h-[200px]">
                                   <div className="space-y-2">

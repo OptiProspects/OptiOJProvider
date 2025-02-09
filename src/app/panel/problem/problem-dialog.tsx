@@ -10,7 +10,7 @@ import rehypeSanitize from "rehype-sanitize"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import rehypeHighlight from "rehype-highlight"
-import { Check, ChevronsUpDown, X } from "lucide-react"
+import { Check, ChevronsUpDown} from "lucide-react"
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github-dark.css'
 
@@ -45,18 +45,11 @@ import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { createProblem, updateProblem, type ProblemDetail, type Difficulty, type NormalDifficulty, type OIDifficulty } from "@/lib/problemService"
+import { createProblem, updateProblem, type ProblemDetail} from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
 
@@ -65,7 +58,7 @@ const formSchema = z.object({
   description: z.string().min(1, "题目描述不能为空"),
   input_description: z.string().min(1, "输入说明不能为空"),
   output_description: z.string().min(1, "输出说明不能为空"),
-  samples: z.string().min(1, "样例数据不能为空").transform(value => {
+  sample_cases: z.string().min(1, "样例数据不能为空").transform(value => {
     try {
       JSON.parse(value);
       return value;
@@ -136,7 +129,7 @@ export function ProblemDialog({
         description: problem.description,
         input_description: problem.input_description,
         output_description: problem.output_description,
-        samples: problem.samples,
+        sample_cases: problem.sample_cases,
         hint: problem.hint || '',
         source: problem.source || '',
         difficulty: problem.difficulty,
@@ -306,7 +299,7 @@ export function ProblemDialog({
 
                 <FormField
                   control={form.control}
-                  name="samples"
+                  name="sample_cases"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>样例数据</FormLabel>

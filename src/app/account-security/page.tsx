@@ -99,7 +99,7 @@ function SessionCard({ session, onRevoke, isCurrentSession }: {
     try {
       await onRevoke(session.session_id);
       toast.success('成功退出设备');
-    } catch (error) {
+    } catch {
       toast.error('退出设备失败');
     } finally {
       setRevoking(false);
@@ -219,8 +219,8 @@ export default function AccountSecurity() {
       if (currentSession) {
         setCurrentSessionId(currentSession.session_id);
       }
-    } catch (error) {
-      console.error('获取活跃会话失败:', error);
+    } catch {
+      console.error('获取活跃会话失败:');
       toast.error('获取会话信息失败');
     } finally {
       setLoading(false);
@@ -235,8 +235,8 @@ export default function AccountSecurity() {
       } else {
         loadSessions();
       }
-    } catch (error) {
-      throw error;
+    } catch {
+      throw new Error('退出设备失败');
     }
   };
 
@@ -244,7 +244,7 @@ export default function AccountSecurity() {
     try {
       await logoutAllDevices();
       router.push('/login');
-    } catch (error) {
+    } catch {
       toast.error('退出所有设备失败');
     }
   };

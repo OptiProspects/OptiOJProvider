@@ -59,7 +59,7 @@ export function TeamApplyDialog({
       form.reset()
       onOpenChange(false)
       onSuccess?.()
-    } catch (error) {
+    } catch {
       toast.error("发送申请失败")
     }
   }

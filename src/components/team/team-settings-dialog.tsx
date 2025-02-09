@@ -122,7 +122,7 @@ export function TeamSettingsDialog({
       toast.success("团队信息更新成功")
       onSuccess()
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       toast.error("团队信息更新失败")
     }
   }

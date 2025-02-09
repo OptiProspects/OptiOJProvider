@@ -19,7 +19,6 @@ interface BanTimePickerProps {
 export function BanTimePicker({ date, setDate, className }: BanTimePickerProps) {
   // 获取当前时间作为最小值
   const now = new Date()
-  const currentYear = now.getFullYear()
 
   // 生成时间选项
   const days = Array.from({ length: 365 }, (_, i) => i + 1) // 最多一年

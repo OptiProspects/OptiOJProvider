@@ -14,7 +14,6 @@ import { Check, ChevronsUpDown, Plus, Minus } from "lucide-react"
 import 'katex/dist/katex.min.css'
 import 'highlight.js/styles/github-dark.css'
 import { Label } from "@/components/ui/label"
-
 import {
   Dialog,
   DialogContent,
@@ -50,16 +49,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { adminUpdateProblem, type ProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
+import { adminUpdateProblem, type ProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse } from "@/lib/problemService"
 import { getTagList, type Tag } from "@/lib/tagService"
 import { cn } from "@/lib/utils"
+import { AxiosError } from "axios"
 
 const formSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   description: z.string().min(1, "题目描述不能为空"),
   input_description: z.string().min(1, "输入说明不能为空"),
   output_description: z.string().min(1, "输出说明不能为空"),
-  samples: z.string().min(1, "样例数据不能为空").transform(value => {
+  sample_cases: z.string().min(1, "样例数据不能为空").transform(value => {
     try {
       JSON.parse(value);
       return value;
@@ -119,7 +119,7 @@ export function EditProblemDialog({
       description: problem.description,
       input_description: problem.input_description,
       output_description: problem.output_description,
-      samples: problem.sample_cases,
+      sample_cases: problem.sample_cases,
       hint: problem.hint || '',
       source: problem.source || '',
       difficulty: problem.difficulty,
@@ -187,17 +187,28 @@ export function EditProblemDialog({
   const onSubmit = async (data: FormData) => {
     try {
       if (!useJsonInput) {
-        // 使用已经同步到表单中的数据，无需重复验证和设置
-        data.samples = form.getValues('samples')
+        const validSamples = samples.filter(s => s.input.trim() || s.output.trim())
+        if (validSamples.length === 0) {
+          toast.error("请至少添加一个样例")
+          return
+        }
+        data.sample_cases = JSON.stringify(validSamples)
       }
       await adminUpdateProblem(problem.id, data)
       toast.success("更新成功")
       onOpenChange(false)
       onSuccess?.()
-    } catch (error: any) {
-      toast.error("更新失败", {
-        description: error.response?.data?.message || "请稍后重试"
-      })
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        const errorMessage = error.response?.data?.message || "请稍后重试"
+        toast.error("更新失败", {
+          description: errorMessage
+        })
+      } else {
+        toast.error("更新失败", {
+          description: "请稍后重试"
+        })
+      }
     }
   }
 
@@ -208,7 +219,7 @@ export function EditProblemDialog({
     // 同步更新表单数据
     const validSamples = newSamples.filter(s => s.input.trim() || s.output.trim())
     if (validSamples.length > 0) {
-      form.setValue('samples', JSON.stringify(validSamples), {
+      form.setValue('sample_cases', JSON.stringify(validSamples), {
         shouldValidate: true,
         shouldDirty: true
       })
@@ -226,7 +237,7 @@ export function EditProblemDialog({
     // 同步更新表单数据
     const validSamples = newSamples.filter(s => s.input.trim() || s.output.trim())
     if (validSamples.length > 0) {
-      form.setValue('samples', JSON.stringify(validSamples), {
+      form.setValue('sample_cases', JSON.stringify(validSamples), {
         shouldValidate: true,
         shouldDirty: true
       })
@@ -346,7 +357,7 @@ export function EditProblemDialog({
 
                 <FormField
                   control={form.control}
-                  name="samples"
+                  name="sample_cases"
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center justify-between">
@@ -468,7 +479,7 @@ export function EditProblemDialog({
                   <FormField
                     control={form.control}
                     name="tag_ids"
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>标签</FormLabel>
                         <FormControl>
@@ -507,9 +518,9 @@ export function EditProblemDialog({
                                 <Input
                                   placeholder="搜索标签..."
                                   className="mb-2"
-                                  onChange={(e) => {
-                                    // TODO: 实现搜索功能
-                                  }}
+                                  // onChange={(e) => {
+                                  //   // TODO: 实现搜索功能
+                                  // }}
                                 />
                                 <ScrollArea className="h-[200px]">
                                   <div className="space-y-2">

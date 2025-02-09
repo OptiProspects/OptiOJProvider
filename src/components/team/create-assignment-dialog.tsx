@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { toast } from "sonner"
-import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -69,7 +68,7 @@ export function CreateAssignmentDialog({
       setDescription("")
       setStartDate(undefined)
       setEndDate(undefined)
-    } catch (error) {
+    } catch {
       toast.error("创建作业失败")
     } finally {
       setSubmitting(false)

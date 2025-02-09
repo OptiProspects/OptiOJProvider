@@ -12,6 +12,7 @@ import 'highlight.js/styles/github-dark.css'
 import { loader } from "@monaco-editor/react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Navbar from "@/components/Navbar"
+import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -70,6 +71,7 @@ export default function ProblemDetailPage() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(true)
   const [editorWidth, setEditorWidth] = React.useState(800)
   const [isResizing, setIsResizing] = React.useState(false)
+  const [editorWidthRatio, setEditorWidthRatio] = React.useState(0.4) // 默认40%
 
   React.useEffect(() => {
     const fetchProblem = async () => {
@@ -96,6 +98,24 @@ export default function ProblemDetailPage() {
       })
   }, [])
 
+  // 修改屏幕宽度监听
+  React.useEffect(() => {
+    const handleResize = () => {
+      // 在小屏幕上自动关闭编辑器
+      if (window.innerWidth < 768) {
+        setIsEditorOpen(false)
+      }
+      // 根据保存的比例调整编辑器宽度
+      setEditorWidth(Math.min(800, window.innerWidth * editorWidthRatio))
+    }
+
+    // 初始化
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [editorWidthRatio]) // 添加editorWidthRatio作为依赖
+
   const handleResizeStart = (e: React.MouseEvent) => {
     setIsResizing(true)
     document.addEventListener('mousemove', handleResizeMove)
@@ -104,8 +124,15 @@ export default function ProblemDetailPage() {
 
   const handleResizeMove = React.useCallback((e: MouseEvent) => {
     if (!isResizing) return
+    const minWidth = Math.min(400, window.innerWidth * 0.3)
+    const maxWidth = window.innerWidth * 0.7
     const newWidth = window.innerWidth - e.clientX
-    setEditorWidth(Math.min(Math.max(400, newWidth), window.innerWidth - 400))
+    const clampedWidth = Math.min(Math.max(minWidth, newWidth), maxWidth)
+    
+    // 保存新的宽度比例
+    const newRatio = clampedWidth / window.innerWidth
+    setEditorWidthRatio(newRatio)
+    setEditorWidth(clampedWidth)
   }, [isResizing])
 
   const handleResizeEnd = React.useCallback(() => {
@@ -176,7 +203,15 @@ export default function ProblemDetailPage() {
       <Navbar />
       <main className="flex-1 flex relative overflow-hidden">
         {/* 左侧题目区域 */}
-        <div className="h-full" style={{ width: isEditorOpen ? `calc(100% - ${editorWidth}px)` : '100%' }}>
+        <div 
+          className={cn(
+            "h-full transition-[width] duration-300 ease-in-out",
+            isEditorOpen ? "w-[60%] lg:w-[65%]" : "w-full"
+          )}
+          style={{ 
+            width: isEditorOpen ? `calc(100% - ${editorWidth}px)` : '100%'
+          }}
+        >
           <ScrollArea className="h-full">
             <div className="w-full px-4 py-8">
               <div className="max-w-4xl mx-auto space-y-8">
@@ -293,48 +328,62 @@ export default function ProblemDetailPage() {
           </ScrollArea>
         </div>
 
-        {/* 右侧编辑器区域 */}
-        <div 
-          className="h-full relative"
+        {/* 编辑器切换按钮 */}
+        <button
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 z-10",
+            "w-6 h-24 bg-accent hover:bg-accent/90",
+            "flex items-center justify-center",
+            "rounded-l border-l border-y",
+            isEditorOpen ? "right-[400px]" : "right-0",
+            "transition-all duration-300 ease-in-out"
+          )}
           style={{ 
-            width: isEditorOpen ? `${editorWidth}px` : 0,
-            display: isEditorOpen ? 'block' : 'none'
+            right: isEditorOpen ? `${editorWidth}px` : 0 
           }}
+          onClick={() => setIsEditorOpen(!isEditorOpen)}
         >
-          {/* 分隔条 */}
+          {isEditorOpen ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
+
+        {/* 编辑器区域 */}
+        <div
+          className={cn(
+            "absolute top-0 right-0 h-full bg-background",
+            "transition-transform duration-300 ease-in-out",
+            isEditorOpen ? "translate-x-0" : "translate-x-full"
+          )}
+          style={{ width: `${editorWidth}px` }}
+        >
+          {/* 拖拽条 */}
           <div
-            className="absolute -left-2 top-0 w-4 h-full cursor-col-resize select-none flex items-center justify-center"
+            className={cn(
+              "absolute -left-2 top-0 w-4 h-full",
+              "cursor-col-resize select-none",
+              "flex items-center justify-center",
+              "group",
+              isResizing && "active"
+            )}
             onMouseDown={handleResizeStart}
           >
-            <div className="w-[2px] h-full bg-border hover:bg-primary/50 hover:w-1 transition-[width]" />
+            <div className={cn(
+              "w-[2px] h-full",
+              "bg-border group-hover:bg-primary/50 group-active:bg-primary",
+              "group-hover:w-1 transition-[width,background-color]",
+              isResizing && "w-1 bg-primary"
+            )} />
           </div>
 
-          {/* 切换按钮 */}
-          {isEditorOpen && (
-            <button
-              onClick={() => setIsEditorOpen(false)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border text-foreground rounded-md z-10"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
-          
-          <CodeEditor 
-            isOpen={isEditorOpen} 
-            onOpenChange={setIsEditorOpen} 
+          <CodeEditor
+            isOpen={isEditorOpen}
+            onOpenChange={setIsEditorOpen}
             problem={problem}
           />
         </div>
-
-        {/* 展开按钮 */}
-        {!isEditorOpen && (
-          <button
-            onClick={() => setIsEditorOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border text-foreground rounded-l-md z-20"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-        )}
       </main>
     </div>
   )

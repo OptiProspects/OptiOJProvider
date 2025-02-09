@@ -21,11 +21,22 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Spinner } from "@/components/ui/spinner"
-import { getSubmissionList } from "@/lib/submissionService"
-import type { SubmissionStatus } from "@/lib/submissionService"
+import { 
+  getSubmissionList, 
+  getTeamAssignmentSubmissionList,
+  type SubmissionStatus,
+  type SubmissionRecord,
+  type TeamAssignmentSubmissionRecord
+} from "@/lib/submissionService"
 
 interface SubmissionListProps {
   problemId?: number
+  type?: 'normal' | 'team_assignment'
+  teamId?: number
+  assignmentId?: number
+  userId?: number
+  status?: SubmissionStatus
+  orderType?: 'asc' | 'desc'
 }
 
 const statusMap: Record<SubmissionStatus, { label: string; color: string }> = {
@@ -44,25 +55,57 @@ const getStatusInfo = (status: string) => {
   return statusMap[status as SubmissionStatus] || { label: status, color: "bg-gray-500" }
 }
 
-export function SubmissionList({ problemId }: SubmissionListProps) {
+export function SubmissionList({ 
+  problemId,
+  type = 'normal',
+  teamId,
+  assignmentId,
+  userId,
+  status,
+  orderType
+}: SubmissionListProps) {
   const [page, setPage] = React.useState(1)
   const [loading, setLoading] = React.useState(true)
-  const [submissions, setSubmissions] = React.useState<any[]>([])
+  const [error, setError] = React.useState<string | null>(null)
+  const [submissions, setSubmissions] = React.useState<(SubmissionRecord | TeamAssignmentSubmissionRecord)[]>([])
   const [total, setTotal] = React.useState(0)
   const pageSize = 20
 
   const fetchSubmissions = React.useCallback(async () => {
     try {
       setLoading(true)
-      const response = await getSubmissionList(page, pageSize, problemId)
-      setSubmissions(response.data.submissions)
-      setTotal(response.data.total)
+      setError(null)
+      
+      if (type === 'team_assignment') {
+        if (!teamId || !assignmentId) {
+          throw new Error('团队作业提交列表需要 teamId 和 assignmentId')
+        }
+        const response = await getTeamAssignmentSubmissionList({
+          page,
+          page_size: pageSize,
+          team_id: teamId,
+          assignment_id: assignmentId,
+          problem_id: problemId,
+          user_id: userId,
+          status,
+          order_type: orderType
+        })
+        setSubmissions(response.submissions || [])
+        setTotal(response.total || 0)
+      } else {
+        const response = await getSubmissionList(page, pageSize, problemId)
+        setSubmissions(response.data.submissions || [])
+        setTotal(response.data.total || 0)
+      }
     } catch (error) {
-      console.error("Failed to fetch submissions:", error)
+      console.error("获取提交记录失败:", error)
+      setError(error instanceof Error ? error.message : "获取提交记录失败")
+      setSubmissions([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
-  }, [page, problemId])
+  }, [page, problemId, type, teamId, assignmentId, userId, status, orderType])
 
   React.useEffect(() => {
     fetchSubmissions()
@@ -76,6 +119,23 @@ export function SubmissionList({ problemId }: SubmissionListProps) {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="text-destructive mb-2">出错了</div>
+        <div className="text-muted-foreground text-sm">{error}</div>
+      </div>
+    )
+  }
+
+  if (submissions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="text-muted-foreground">暂无提交记录</div>
+      </div>
+    )
+  }
+
   const totalPages = Math.ceil(total / pageSize)
 
   return (
@@ -84,10 +144,19 @@ export function SubmissionList({ problemId }: SubmissionListProps) {
         <TableHeader>
           <TableRow>
             <TableHead>提交ID</TableHead>
+            {type === 'team_assignment' && (
+              <>
+                <TableHead>题目</TableHead>
+                <TableHead>提交者</TableHead>
+              </>
+            )}
             <TableHead>状态</TableHead>
             <TableHead>执行时间</TableHead>
             <TableHead>内存使用</TableHead>
             <TableHead>语言</TableHead>
+            {type === 'team_assignment' && (
+              <TableHead>得分</TableHead>
+            )}
             <TableHead>提交时间</TableHead>
             <TableHead className="text-right">操作</TableHead>
           </TableRow>
@@ -98,6 +167,17 @@ export function SubmissionList({ problemId }: SubmissionListProps) {
             return (
               <TableRow key={submission.id}>
                 <TableCell>{submission.id}</TableCell>
+                {type === 'team_assignment' && (
+                  <>
+                    <TableCell>
+                      {(submission as TeamAssignmentSubmissionRecord).problem_title}
+                    </TableCell>
+                    <TableCell>
+                      {(submission as TeamAssignmentSubmissionRecord).nickname || 
+                       (submission as TeamAssignmentSubmissionRecord).username}
+                    </TableCell>
+                  </>
+                )}
                 <TableCell>
                   <Badge className={`${statusInfo.color} text-white`}>
                     {statusInfo.label}
@@ -106,6 +186,9 @@ export function SubmissionList({ problemId }: SubmissionListProps) {
                 <TableCell>{submission.time_used}ms</TableCell>
                 <TableCell>{submission.memory_used}KB</TableCell>
                 <TableCell>{submission.language.toUpperCase()}</TableCell>
+                {type === 'team_assignment' && (
+                  <TableCell>{(submission as TeamAssignmentSubmissionRecord).score}</TableCell>
+                )}
                 <TableCell>
                   {format(new Date(submission.created_at), "yyyy-MM-dd HH:mm:ss")}
                 </TableCell>

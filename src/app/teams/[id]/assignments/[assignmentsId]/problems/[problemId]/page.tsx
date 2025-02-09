@@ -295,7 +295,12 @@ export default function ProblemDetailPage() {
                   </TabsContent>
 
                   <TabsContent value="submissions">
-                    <SubmissionList problemId={problem.id} />
+                    <SubmissionList 
+                      type="team_assignment"
+                      teamId={Number(params.id)}
+                      assignmentId={Number(params.assignmentsId)}
+                      problemId={problem.id}
+                    />
                   </TabsContent>
                 </Tabs>
               </div>

@@ -11,6 +11,14 @@ export interface SubmissionRecord {
   created_at: string
 }
 
+export interface TeamAssignmentSubmissionRecord extends SubmissionRecord {
+  problem_type: 'global' | 'team'
+  problem_title: string
+  username: string
+  nickname: string
+  score: number
+}
+
 export interface SubmissionDetail extends SubmissionRecord {
   source_code: string
   error_message: string
@@ -29,6 +37,13 @@ export type SubmissionStatus =
 
 export interface SubmissionListResponse {
   submissions: SubmissionRecord[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface TeamAssignmentSubmissionListResponse {
+  submissions: TeamAssignmentSubmissionRecord[]
   total: number
   page: number
   page_size: number
@@ -60,6 +75,23 @@ export async function getSubmissionList(
 
   const response = await apiClient.get(`/submissions?${params.toString()}`)
   return response.data
+}
+
+export async function getTeamAssignmentSubmissionList(params: {
+  page: number
+  page_size: number
+  team_id: number
+  assignment_id: number
+  problem_id?: number
+  user_id?: number
+  status?: SubmissionStatus
+  order_type?: 'asc' | 'desc'
+}) {
+  const response = await apiClient.get<{
+    code: number
+    data: TeamAssignmentSubmissionListResponse
+  }>('/teams/assignments/getSubmissions', { params })
+  return response.data.data
 }
 
 export async function getSubmissionDetail(submissionId: number) {

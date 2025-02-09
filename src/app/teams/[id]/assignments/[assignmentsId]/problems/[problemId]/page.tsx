@@ -12,16 +12,18 @@ import 'highlight.js/styles/github-dark.css'
 import { loader } from "@monaco-editor/react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Navbar from "@/components/Navbar"
+import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/ui/spinner"
-import { getProblemDetail, getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
-import type { ProblemDetail } from "@/lib/problemService"
+import { getCurrentDifficultySystem, type DifficultySystemResponse, type Difficulty } from "@/lib/problemService"
+import { getAssignmentProblemDetail, type AssignmentProblemFullDetail } from "@/lib/teamService"
 import { SubmissionList } from "@/components/submission/submission-list"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { CodeEditor } from "@/components/code-editor"
+import { normalDifficultyMap, oiDifficultyMap } from "@/lib/difficulty"
 
 // 配置 Monaco Editor 的 CDN 路径
 loader.config({
@@ -30,61 +32,35 @@ loader.config({
   }
 })
 
-const normalDifficultyMap = {
-  easy: { label: "简单", color: "success" as const },
-  medium: { label: "中等", color: "secondary" as const },
-  hard: { label: "困难", color: "destructive" as const },
-  unrated: { label: "暂无评级", color: "outline" as const }
-} as const
-
-const oiDifficultyMap = {
-  beginner: { label: "入门/蒟蒻", color: "success" as const },
-  basic: { label: "普及-", color: "success" as const },
-  basicplus: { label: "普及/提高-", color: "secondary" as const },
-  advanced: { label: "普及+/提高", color: "secondary" as const },
-  advplus: { label: "提高+/省选-", color: "destructive" as const },
-  provincial: { label: "省选/NOI-", color: "destructive" as const },
-  noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
-  unrated: { label: "暂无评级", color: "outline" as const }
-} as const
-
-// 添加一个全局样式来隐藏 Monaco Editor 的滚动条
-const monacoStyles = `
-  .monaco-editor .scrollbar {
-    background-color: hsl(var(--accent) / 0.1) !important;
-  }
-  .monaco-editor .slider {
-    background-color: hsl(var(--accent)) !important;
-    border-radius: 9999px !important;
-  }
-  .monaco-editor .slider:hover {
-    background-color: hsl(var(--accent) / 0.8) !important;
-  }
-`
-
 export default function ProblemDetailPage() {
   const params = useParams()
-  const [problem, setProblem] = React.useState<ProblemDetail | null>(null)
+  const [problem, setProblem] = React.useState<AssignmentProblemFullDetail | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [difficultySystem, setDifficultySystem] = React.useState<DifficultySystemResponse | null>(null)
   const [isEditorOpen, setIsEditorOpen] = React.useState(true)
   const [editorWidth, setEditorWidth] = React.useState(800)
   const [isResizing, setIsResizing] = React.useState(false)
+  const [editorWidthRatio, setEditorWidthRatio] = React.useState(0.4) // 默认40%
 
   React.useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const data = await getProblemDetail(Number(params.id))
+        const data = await getAssignmentProblemDetail({
+          team_id: Number(params.id),
+          assignment_id: Number(params.assignmentsId),
+          problem_id: Number(params.problemId),
+          problem_type: 'global' // 这里可能需要根据实际情况动态设置
+        })
         setProblem(data)
       } catch (error) {
-        console.error("Failed to fetch problem:", error)
+        console.error("获取题目失败:", error)
       } finally {
         setLoading(false)
       }
     }
 
     fetchProblem()
-  }, [params.id])
+  }, [params.id, params.assignmentsId, params.problemId])
 
   React.useEffect(() => {
     getCurrentDifficultySystem()
@@ -96,6 +72,24 @@ export default function ProblemDetailPage() {
       })
   }, [])
 
+  // 修改屏幕宽度监听
+  React.useEffect(() => {
+    const handleResize = () => {
+      // 在小屏幕上自动关闭编辑器
+      if (window.innerWidth < 768) {
+        setIsEditorOpen(false)
+      }
+      // 根据保存的比例调整编辑器宽度
+      setEditorWidth(Math.min(800, window.innerWidth * editorWidthRatio))
+    }
+
+    // 初始化
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [editorWidthRatio]) // 添加editorWidthRatio作为依赖
+
   const handleResizeStart = (e: React.MouseEvent) => {
     setIsResizing(true)
     document.addEventListener('mousemove', handleResizeMove)
@@ -104,8 +98,15 @@ export default function ProblemDetailPage() {
 
   const handleResizeMove = React.useCallback((e: MouseEvent) => {
     if (!isResizing) return
+    const minWidth = Math.min(400, window.innerWidth * 0.3)
+    const maxWidth = window.innerWidth * 0.7
     const newWidth = window.innerWidth - e.clientX
-    setEditorWidth(Math.min(Math.max(400, newWidth), window.innerWidth - 400))
+    const clampedWidth = Math.min(Math.max(minWidth, newWidth), maxWidth)
+    
+    // 保存新的宽度比例
+    const newRatio = clampedWidth / window.innerWidth
+    setEditorWidthRatio(newRatio)
+    setEditorWidth(clampedWidth)
   }, [isResizing])
 
   const handleResizeEnd = React.useCallback(() => {
@@ -144,7 +145,7 @@ export default function ProblemDetailPage() {
     if (!difficultySystem) return { label: difficulty, color: "outline" as const }
     
     const currentSystemInfo = difficultySystem.systems.find(
-      sys => sys.system === problem.difficulty_system
+      sys => sys.system === (problem.difficulty_system || 'normal')
     )
     if (!currentSystemInfo) return { label: difficulty, color: "outline" as const }
 
@@ -158,7 +159,7 @@ export default function ProblemDetailPage() {
     return map[difficulty as keyof typeof map] || { label: difficultyInfo.display, color: "outline" as const }
   }
 
-  const difficultyInfo = getDifficultyLabel(problem.difficulty)
+  const difficultyInfo = getDifficultyLabel(problem.difficulty as Difficulty)
 
   const MarkdownContent = ({ children }: { children: string }) => (
     <div className="prose dark:prose-invert max-w-none">
@@ -176,7 +177,15 @@ export default function ProblemDetailPage() {
       <Navbar />
       <main className="flex-1 flex relative overflow-hidden">
         {/* 左侧题目区域 */}
-        <div className="h-full" style={{ width: isEditorOpen ? `calc(100% - ${editorWidth}px)` : '100%' }}>
+        <div 
+          className={cn(
+            "h-full transition-[width] duration-300 ease-in-out",
+            isEditorOpen ? "w-[60%] lg:w-[65%]" : "w-full"
+          )}
+          style={{ 
+            width: isEditorOpen ? `calc(100% - ${editorWidth}px)` : '100%'
+          }}
+        >
           <ScrollArea className="h-full">
             <div className="w-full px-4 py-8">
               <div className="max-w-4xl mx-auto space-y-8">
@@ -200,22 +209,30 @@ export default function ProblemDetailPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {problem.categories.map((category) => (
-                      <Badge key={category.id} variant="outline">
-                        {category.name}
-                      </Badge>
-                    ))}
-                    {problem.tags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        style={{
-                          backgroundColor: tag.color,
-                          color: '#fff'
-                        }}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
+                    {(() => {
+                      try {
+                        const tags = typeof problem.tags === 'string' 
+                          ? JSON.parse(problem.tags) 
+                          : Array.isArray(problem.tags) 
+                            ? problem.tags 
+                            : []
+                        
+                        return tags.map((tag: { id: number, name: string, color: string }) => (
+                          <Badge
+                            key={tag.id}
+                            style={{
+                              backgroundColor: tag.color,
+                              color: '#fff'
+                            }}
+                          >
+                            {tag.name}
+                          </Badge>
+                        ))
+                      } catch (error) {
+                        console.error('解析标签失败:', error)
+                        return null
+                      }
+                    })()}
                   </div>
                 </div>
 
@@ -243,34 +260,32 @@ export default function ProblemDetailPage() {
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">样例</h3>
-                      {JSON.parse(problem.samples).map((sample: { input: string; output: string }, index: number) => (
-                        <div key={index} className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="font-medium">输入 #{index + 1}</div>
-                            <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
-                              {sample.input}
-                            </pre>
+                      {problem.sample_cases && problem.sample_cases !== "" ? 
+                        JSON.parse(problem.sample_cases).map((sample: { input: string; output: string }, index: number) => (
+                          <div key={index} className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div className="font-medium">输入 #{index + 1}</div>
+                              <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
+                                {sample.input}
+                              </pre>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="font-medium">输出 #{index + 1}</div>
+                              <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
+                                {sample.output}
+                              </pre>
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="font-medium">输出 #{index + 1}</div>
-                            <pre className="p-4 rounded-lg bg-muted font-mono text-sm">
-                              {sample.output}
-                            </pre>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      : (
+                        <div className="text-muted-foreground">暂无样例</div>
+                      )}
                     </div>
 
                     {problem.hint && (
                       <div className="space-y-4">
                         <h3 className="text-lg font-semibold">提示</h3>
                         <MarkdownContent>{problem.hint}</MarkdownContent>
-                      </div>
-                    )}
-
-                    {problem.source && (
-                      <div className="text-sm text-muted-foreground">
-                        来源：{problem.source}
                       </div>
                     )}
                   </TabsContent>
@@ -289,48 +304,62 @@ export default function ProblemDetailPage() {
           </ScrollArea>
         </div>
 
-        {/* 右侧编辑器区域 */}
-        <div 
-          className="h-full relative"
+        {/* 编辑器切换按钮 */}
+        <button
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 z-10",
+            "w-6 h-24 bg-accent hover:bg-accent/90",
+            "flex items-center justify-center",
+            "rounded-l border-l border-y",
+            isEditorOpen ? "right-[400px]" : "right-0",
+            "transition-all duration-300 ease-in-out"
+          )}
           style={{ 
-            width: isEditorOpen ? `${editorWidth}px` : 0,
-            display: isEditorOpen ? 'block' : 'none'
+            right: isEditorOpen ? `${editorWidth}px` : 0 
           }}
+          onClick={() => setIsEditorOpen(!isEditorOpen)}
         >
-          {/* 分隔条 */}
+          {isEditorOpen ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
+
+        {/* 编辑器区域 */}
+        <div
+          className={cn(
+            "absolute top-0 right-0 h-full bg-background",
+            "transition-transform duration-300 ease-in-out",
+            isEditorOpen ? "translate-x-0" : "translate-x-full"
+          )}
+          style={{ width: `${editorWidth}px` }}
+        >
+          {/* 拖拽条 */}
           <div
-            className="absolute -left-2 top-0 w-4 h-full cursor-col-resize select-none flex items-center justify-center"
+            className={cn(
+              "absolute -left-2 top-0 w-4 h-full",
+              "cursor-col-resize select-none",
+              "flex items-center justify-center",
+              "group",
+              isResizing && "active"
+            )}
             onMouseDown={handleResizeStart}
           >
-            <div className="w-[2px] h-full bg-border hover:bg-primary/50 hover:w-1 transition-[width]" />
+            <div className={cn(
+              "w-[2px] h-full",
+              "bg-border group-hover:bg-primary/50 group-active:bg-primary",
+              "group-hover:w-1 transition-[width,background-color]",
+              isResizing && "w-1 bg-primary"
+            )} />
           </div>
 
-          {/* 切换按钮 */}
-          {isEditorOpen && (
-            <button
-              onClick={() => setIsEditorOpen(false)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border text-foreground rounded-md z-10"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
-          
-          <CodeEditor 
-            isOpen={isEditorOpen} 
-            onOpenChange={setIsEditorOpen} 
+          <CodeEditor
+            isOpen={isEditorOpen}
+            onOpenChange={setIsEditorOpen}
             problem={problem}
           />
         </div>
-
-        {/* 展开按钮 */}
-        {!isEditorOpen && (
-          <button
-            onClick={() => setIsEditorOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-24 bg-background hover:bg-accent border text-foreground rounded-l-md z-20"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-        )}
       </main>
     </div>
   )

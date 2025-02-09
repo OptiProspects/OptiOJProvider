@@ -23,6 +23,7 @@ import type { ProblemDetail } from "@/lib/problemService"
 import { SubmissionList } from "@/components/submission/submission-list"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { CodeEditor } from "@/components/code-editor"
+import { normalDifficultyMap, oiDifficultyMap } from "@/lib/difficulty"
 
 // 配置 Monaco Editor 的 CDN 路径
 loader.config({
@@ -30,38 +31,6 @@ loader.config({
     vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
   }
 })
-
-const normalDifficultyMap = {
-  easy: { label: "简单", color: "success" as const },
-  medium: { label: "中等", color: "secondary" as const },
-  hard: { label: "困难", color: "destructive" as const },
-  unrated: { label: "暂无评级", color: "outline" as const }
-} as const
-
-const oiDifficultyMap = {
-  beginner: { label: "入门/蒟蒻", color: "success" as const },
-  basic: { label: "普及-", color: "success" as const },
-  basicplus: { label: "普及/提高-", color: "secondary" as const },
-  advanced: { label: "普及+/提高", color: "secondary" as const },
-  advplus: { label: "提高+/省选-", color: "destructive" as const },
-  provincial: { label: "省选/NOI-", color: "destructive" as const },
-  noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
-  unrated: { label: "暂无评级", color: "outline" as const }
-} as const
-
-// 添加一个全局样式来隐藏 Monaco Editor 的滚动条
-const monacoStyles = `
-  .monaco-editor .scrollbar {
-    background-color: hsl(var(--accent) / 0.1) !important;
-  }
-  .monaco-editor .slider {
-    background-color: hsl(var(--accent)) !important;
-    border-radius: 9999px !important;
-  }
-  .monaco-editor .slider:hover {
-    background-color: hsl(var(--accent) / 0.8) !important;
-  }
-`
 
 export default function ProblemDetailPage() {
   const params = useParams()

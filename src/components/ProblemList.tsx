@@ -39,24 +39,7 @@ import type { PublicProblem } from "@/lib/problemService"
 import { CheckCircle2, Circle, XCircle } from "lucide-react"
 import { TagFilterDialog } from "@/components/tag-filter-dialog"
 import { Tag } from "@/lib/tagService"
-
-const normalDifficultyMap = {
-  easy: { label: "简单", color: "success" as const },
-  medium: { label: "中等", color: "secondary" as const },
-  hard: { label: "困难", color: "destructive" as const },
-  unrated: { label: "暂无评级", color: "outline" as const }
-} as const
-
-const oiDifficultyMap = {
-  beginner: { label: "入门/蒟蒻", color: "success" as const },
-  basic: { label: "普及-", color: "success" as const },
-  basicplus: { label: "普及/提高-", color: "secondary" as const },
-  advanced: { label: "普及+/提高", color: "secondary" as const },
-  advplus: { label: "提高+/省选-", color: "destructive" as const },
-  provincial: { label: "省选/NOI-", color: "destructive" as const },
-  noi: { label: "NOI/NOI+/CTSC", color: "destructive" as const },
-  unrated: { label: "暂无评级", color: "outline" as const }
-} as const
+import { normalDifficultyMap, oiDifficultyMap } from "@/lib/difficulty"
 
 const statusMap = {
   accepted: { icon: CheckCircle2, color: "text-green-500" },

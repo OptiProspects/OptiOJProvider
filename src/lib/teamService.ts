@@ -172,6 +172,7 @@ export interface AssignmentProblemFullDetail {
   memory_limit: number
   tags: string
   difficulty: string
+  difficulty_system?: 'normal' | 'oi'
   score: number
   sample_cases: string
   hint: string
@@ -184,10 +185,15 @@ export async function getAssignmentProblemDetail(params: {
   problem_type: 'global' | 'team'
   team_id: number
 }): Promise<AssignmentProblemFullDetail> {
-  const { data } = await axios.get<APIResponse<AssignmentProblemFullDetail>>('/teams/assignments/getProblemDetail', {
-    params
-  })
-  return data.data
+  try {
+    const response = await apiClient.get<APIResponse<AssignmentProblemFullDetail>>('/teams/assignments/getProblemDetail', {
+      params
+    })
+    return response.data.data
+  } catch (error) {
+    console.error('获取作业题目详情失败:', error)
+    throw error
+  }
 }
 
 // 创建团队
